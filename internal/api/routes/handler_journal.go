@@ -15,7 +15,9 @@ func (apiCfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request
 	var req Req
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		
+		respondWithError(w, http.StatusInternalServerError, "failed to decode body", err)
+		return
 	}
-	fmt.Printf("requesrt: %+v\n", r.Body)
+
+	fmt.Printf("Received new journal entry: Title=%s, Content=%s\n", req.Title, req.Content)
 }
