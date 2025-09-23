@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/sianwa11/my-journal/internal/api/routes"
@@ -10,6 +11,8 @@ import (
 func main() {
 
 	routes := routes.SetupRoutes()
+	port := "8080"
 
-	http.ListenAndServe(":8080", routes)
+	log.Printf("Serving on: http://localhost:%s/app/\n", port)
+	http.ListenAndServe(":"+port, routes)
 }

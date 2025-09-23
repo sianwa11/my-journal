@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/sianwa11/my-journal/internal/database"
 )
 
-func (apiCfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 	type Req struct {
 		Title   string `json:"title"`
 		Content string `json:"content"`
@@ -19,5 +21,10 @@ func (apiCfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fmt.Printf("Received new journal entry: Title=%s, Content=%s\n", req.Title, req.Content)
+	journal, err := cfg.DB.CreateJournalEntry(r.Context(), database.CreateJournalEntryParams{Title: req.Title, Content: req.Content, UserID: 1})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to create journal entry", err)
+	}
+
+	fmt.Printf("journal: %v\n", journal)
 }
