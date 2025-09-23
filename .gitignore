@@ -1,2 +1,6 @@
+out
+*.db
 .env
 commons.txt
+assets/
+samples/
