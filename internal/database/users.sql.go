@@ -10,31 +10,49 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, api_key)
+INSERT INTO users (name, password)
 VALUES (?, ?)
-RETURNING id, created_at, updated_at, name, api_key
+RETURNING id, created_at, updated_at, name, password
 `
 
 type CreateUserParams struct {
-	Name   string
-	ApiKey string
+	Name     string
+	Password string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.ApiKey)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.Password)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Name,
-		&i.ApiKey,
+		&i.Password,
+	)
+	return i, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, created_at, updated_at, name, password FROM users
+WHERE name = ?
+`
+
+func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, name)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Password,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, created_at, updated_at, name, api_key FROM users
+SELECT id, created_at, updated_at, name, password FROM users
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -51,7 +69,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Name,
-			&i.ApiKey,
+			&i.Password,
 		); err != nil {
 			return nil, err
 		}
