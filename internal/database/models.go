@@ -6,6 +6,7 @@ package database
 
 import (
 	"database/sql"
+	"time"
 )
 
 type JournalEntry struct {
@@ -15,6 +16,15 @@ type JournalEntry struct {
 	CreatedAt sql.NullTime
 	UpdatedAt sql.NullTime
 	UserID    int64
+}
+
+type RefreshToken struct {
+	ID        int64
+	Token     string
+	UserID    int64
+	ExpiresAt time.Time
+	CreatedAt time.Time
+	RevokedAt time.Time
 }
 
 type User struct {

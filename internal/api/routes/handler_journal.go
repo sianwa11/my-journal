@@ -20,7 +20,7 @@ func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdInt := r.Context().Value("user_id").(int)
+	userIdInt := r.Context().Value(userIDKey).(int)
 	userId := int64(userIdInt)
 
 	journal, err := cfg.DB.CreateJournalEntry(r.Context(), database.CreateJournalEntryParams{

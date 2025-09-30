@@ -102,16 +102,34 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to create refresh token", err)
+		return
+	}
+
+	refreshTokenDB, err := cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token: refreshToken,
+		UserID: int64(user.ID),
+		ExpiresAt: time.Now().AddDate(0, 0, 60),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to save refresh token", err)
+		return
+	}
+
 	respondWithJson(w, http.StatusOK, struct {
-		ID        int `json:"id"`
-		Name      string `json:"name"`
-		CreatedAt time.Time `json:"created_at"`
-		Token     string `json:"token"`
+		ID           int `json:"id"`
+		Name         string `json:"name"`
+		CreatedAt    time.Time `json:"created_at"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}{
 		ID: int(user.ID),
 		Name: user.Name,
 		CreatedAt: user.CreatedAt.Time,
 		Token: jwt,
+		RefreshToken: refreshTokenDB.Token,
 	})
 }
 
