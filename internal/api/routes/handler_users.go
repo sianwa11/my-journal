@@ -3,7 +3,6 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/sianwa11/my-journal/internal/auth"
 	"github.com/sianwa11/my-journal/internal/database"
@@ -18,7 +17,7 @@ func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var params Req
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to decode body", err)
+		respondWithError(w, http.StatusBadRequest, "invalid JSON format", err)
 		return
 	}
 
@@ -64,72 +63,5 @@ func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
-	type Params struct {
-		Name     string `json:"name"`
-		Password string `json:"password"`
-	}
 
-	var params Params
-	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to decode body", err)
-		return
-	}
-
-	if params.Name == "" || params.Password == "" {
-		respondWithError(w, http.StatusBadRequest, "Name and Password required", err)
-		return
-	}
-
-	user, err := cfg.DB.GetUser(r.Context(), params.Name)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to get user", err)
-		return
-	}
-
-	err = auth.CheckPasswordHash(params.Password, user.Password)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Incorrect password", err)
-		return
-	}
-
-	
-
-	jwt, err := auth.MakeJWT(int(user.ID), cfg.jwtSecret, 1 * time.Hour)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to create jwt", err)
-		return
-	}
-
-	refreshToken, err := auth.MakeRefreshToken()
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to create refresh token", err)
-		return
-	}
-
-	refreshTokenDB, err := cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
-		Token: refreshToken,
-		UserID: int64(user.ID),
-		ExpiresAt: time.Now().AddDate(0, 0, 60),
-	})
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to save refresh token", err)
-		return
-	}
-
-	respondWithJson(w, http.StatusOK, struct {
-		ID           int `json:"id"`
-		Name         string `json:"name"`
-		CreatedAt    time.Time `json:"created_at"`
-		Token        string `json:"token"`
-		RefreshToken string `json:"refresh_token"`
-	}{
-		ID: int(user.ID),
-		Name: user.Name,
-		CreatedAt: user.CreatedAt.Time,
-		Token: jwt,
-		RefreshToken: refreshTokenDB.Token,
-	})
-}
 

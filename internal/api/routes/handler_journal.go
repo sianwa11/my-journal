@@ -3,9 +3,68 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/sianwa11/my-journal/internal/database"
 )
+
+type Journal struct {
+	ID        int    `json:"id"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+	UserID    int    `json:"user_id"`
+}
+
+func (cfg *apiConfig) getJournalEntries(w http.ResponseWriter, r *http.Request) {
+
+	limit := r.URL.Query().Get("limit")
+	if limit == "" {
+		limit = "10"
+	}
+
+	offset := r.URL.Query().Get("offset")
+	if offset == "" {
+		offset = "0"
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid limit parameter", err)
+		return
+	}
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid offset parameter", err)
+		return
+	}
+
+	journals, err := cfg.DB.GetJournals(r.Context(), database.GetJournalsParams{
+		Limit: int64(limitInt),
+		Offset: int64(offsetInt),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not fetch journals", err)
+		return
+	}
+
+
+	journalEntries := []Journal{}
+	for _, journal := range journals {
+		journalEntries = append(journalEntries, Journal{
+			ID: int(journal.ID),
+			Title: journal.Title,
+			Content: journal.Content,
+			CreatedAt: journal.CreatedAt.Time.String(),
+			UpdatedAt: journal.UpdatedAt.Time.String(),
+			UserID: int(journal.UserID),
+		})
+	}
+
+	respondWithJson(w, http.StatusOK, journalEntries)
+}
 
 func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 	type Req struct {
@@ -16,7 +75,7 @@ func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 	var req Req
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to decode body", err)
+		respondWithError(w, http.StatusBadRequest, "invalid JSON format", err)
 		return
 	}
 
@@ -44,4 +103,42 @@ func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 		 UserID: int(journal.UserID),
 	})
 
+}
+
+func (cfg *apiConfig) editJournalEntry(w http.ResponseWriter, r *http.Request) {
+	type Params struct {
+		ID      int    `json:"id"`
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	var params Params
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid JSON format", err)
+		return
+	}
+
+	if params.Title == "" || params.ID == 0 || params.Content == "" {
+		respondWithError(w, http.StatusBadRequest, "please fill in required fields",err)
+		return
+	}
+
+	err = cfg.DB.UpdateJournalEntry(r.Context(), database.UpdateJournalEntryParams{
+		Title: params.Title,
+		Content: params.Content,
+		ID: int64(params.ID),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to update journal", err)
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, map[string]string{
+		"message": "journal updated successfully",
+	})	
+}
+
+func (cfg *apiConfig) deleteJournalEntry(w http.ResponseWriter, r *http.Request) {
+	
 }

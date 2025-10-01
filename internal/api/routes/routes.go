@@ -41,11 +41,17 @@ func SetupRoutes() *http.ServeMux{
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/healthz", healthCheck)
 
-	mux.HandleFunc("POST /api/journal", apiCfg.middlewareMustBeLoggedIn(apiCfg.postJournalEntry))
+	mux.HandleFunc("GET /api/journals", apiCfg.getJournalEntries)
+	mux.HandleFunc("POST /api/journals", apiCfg.middlewareMustBeLoggedIn(apiCfg.postJournalEntry))
+	mux.HandleFunc("PUT /api/journals", apiCfg.middlewareMustBeLoggedIn(apiCfg.editJournalEntry))
+	// mux.HandleFunc("DELETE /api/journals/{journalID}", apiCfg.middlewareMustBeLoggedIn())
 
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 
 	mux.HandleFunc("POST /api/login", apiCfg.handleLogin)
+	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefreshToken)
+	mux.HandleFunc("POST /api/revoke", apiCfg.handleRevokeToken)
+
 
 	return mux
 }
