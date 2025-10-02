@@ -18,6 +18,24 @@ type JournalEntry struct {
 	UserID    int64
 }
 
+type Project struct {
+	ID          int64
+	Title       string
+	Description string
+	ImageUrl    sql.NullString
+	Link        sql.NullString
+	Github      sql.NullString
+	Status      sql.NullString
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
+	UserID      int64
+}
+
+type ProjectTag struct {
+	ProjectID int64
+	TagID     int64
+}
+
 type RefreshToken struct {
 	ID        int64
 	Token     string
@@ -25,6 +43,12 @@ type RefreshToken struct {
 	ExpiresAt time.Time
 	CreatedAt time.Time
 	RevokedAt time.Time
+}
+
+type Tag struct {
+	ID        int64
+	Name      string
+	CreatedAt sql.NullTime
 }
 
 type User struct {
