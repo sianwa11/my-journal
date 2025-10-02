@@ -76,3 +76,15 @@ func (q *Queries) SearchTags(ctx context.Context, name string) ([]Tag, error) {
 	}
 	return items, nil
 }
+
+const selectTag = `-- name: SelectTag :one
+SELECT id, name, created_at FROM tags
+WHERE name = ?
+`
+
+func (q *Queries) SelectTag(ctx context.Context, name string) (Tag, error) {
+	row := q.db.QueryRowContext(ctx, selectTag, name)
+	var i Tag
+	err := row.Scan(&i.ID, &i.Name, &i.CreatedAt)
+	return i, err
+}

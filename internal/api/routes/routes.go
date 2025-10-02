@@ -12,6 +12,7 @@ import (
 )
 
 type apiConfig struct{
+	dbConn        *sql.DB
 	DB        *database.Queries
 	jwtSecret string
 }
@@ -37,6 +38,7 @@ func SetupRoutes() *http.ServeMux{
 		jwtSecret: secret,
 	}
 	apiCfg.DB = database.New(db)
+	apiCfg.dbConn = db
 	
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/healthz", healthCheck)
@@ -46,6 +48,8 @@ func SetupRoutes() *http.ServeMux{
 	mux.HandleFunc("POST /api/journals", apiCfg.middlewareMustBeLoggedIn(apiCfg.postJournalEntry))
 	mux.HandleFunc("PUT /api/journals", apiCfg.middlewareMustBeLoggedIn(apiCfg.editJournalEntry))
 	mux.HandleFunc("DELETE /api/journals/{journalID}", apiCfg.middlewareMustBeLoggedIn(apiCfg.deleteJournalEntry))
+
+	mux.HandleFunc("POST /api/projects", apiCfg.middlewareMustBeLoggedIn(apiCfg.createProject))
 
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 
