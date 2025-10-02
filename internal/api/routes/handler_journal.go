@@ -66,6 +66,31 @@ func (cfg *apiConfig) getJournalEntries(w http.ResponseWriter, r *http.Request) 
 	respondWithJson(w, http.StatusOK, journalEntries)
 }
 
+func (cfg *apiConfig) getJournalEntry(w http.ResponseWriter, r *http.Request) {
+	journalIDString := r.PathValue("journalID")
+	journalID, err := strconv.Atoi(journalIDString)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid journal ID", err)
+		return
+	}
+
+	journalEntry, err := cfg.DB.GetJournalEntry(r.Context(), int64(journalID))
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to get journal", err)
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, Journal{
+		ID: int(journalEntry.ID),
+		Title: journalEntry.Title,
+		Content: journalEntry.Content,
+		CreatedAt: journalEntry.CreatedAt.Time.String(),
+		UpdatedAt: journalEntry.CreatedAt.Time.String(),
+		UserID: int(journalEntry.UserID),
+	})
+
+}
+
 func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 	type Req struct {
 		Title   string `json:"title"`
@@ -140,5 +165,37 @@ func (cfg *apiConfig) editJournalEntry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) deleteJournalEntry(w http.ResponseWriter, r *http.Request) {
-	
+	journalIDString := r.PathValue("journalID")
+	journalID, err := strconv.Atoi(journalIDString)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid journal ID", err)
+		return
+	}
+
+	userID := r.Context().Value(userIDKey).(int)
+
+	journal, err := cfg.DB.GetUsersJournal(r.Context(), database.GetUsersJournalParams{
+		ID: int64(journalID),
+		UserID: int64(userID),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "something went wrong", err)
+		return
+	}
+
+	if journal.UserID != int64(userID) {
+		respondWithError(w, http.StatusUnauthorized, "cannot perform this action", err)
+		return
+	}
+
+	err = cfg.DB.DeleteJournalEntry(r.Context(), database.DeleteJournalEntryParams{
+		ID: int64(journalID),
+		UserID: int64(userID),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to delete journal", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

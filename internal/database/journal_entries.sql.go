@@ -35,14 +35,38 @@ func (q *Queries) CreateJournalEntry(ctx context.Context, arg CreateJournalEntry
 	return i, err
 }
 
-const deleteJournalEntru = `-- name: DeleteJournalEntru :exec
+const deleteJournalEntry = `-- name: DeleteJournalEntry :exec
 DELETE FROM journal_entries
+WHERE id = ? AND user_id = ?
+`
+
+type DeleteJournalEntryParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) DeleteJournalEntry(ctx context.Context, arg DeleteJournalEntryParams) error {
+	_, err := q.db.ExecContext(ctx, deleteJournalEntry, arg.ID, arg.UserID)
+	return err
+}
+
+const getJournalEntry = `-- name: GetJournalEntry :one
+SELECT id, title, content, created_at, updated_at, user_id FROM journal_entries
 WHERE id = ?
 `
 
-func (q *Queries) DeleteJournalEntru(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteJournalEntru, id)
-	return err
+func (q *Queries) GetJournalEntry(ctx context.Context, id int64) (JournalEntry, error) {
+	row := q.db.QueryRowContext(ctx, getJournalEntry, id)
+	var i JournalEntry
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UserID,
+	)
+	return i, err
 }
 
 const getJournals = `-- name: GetJournals :many
@@ -84,6 +108,30 @@ func (q *Queries) GetJournals(ctx context.Context, arg GetJournalsParams) ([]Jou
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUsersJournal = `-- name: GetUsersJournal :one
+SELECT id, title, content, created_at, updated_at, user_id FROM journal_entries
+WHERE id = ? AND user_id = ?
+`
+
+type GetUsersJournalParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) GetUsersJournal(ctx context.Context, arg GetUsersJournalParams) (JournalEntry, error) {
+	row := q.db.QueryRowContext(ctx, getUsersJournal, arg.ID, arg.UserID)
+	var i JournalEntry
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UserID,
+	)
+	return i, err
 }
 
 const updateJournalEntry = `-- name: UpdateJournalEntry :exec

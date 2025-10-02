@@ -15,6 +15,14 @@ content = ?,
 updated_at = CURRENT_TIMESTAMP
 WHERE id = ?;
 
--- name: DeleteJournalEntru :exec
-DELETE FROM journal_entries
+-- name: GetUsersJournal :one
+SELECT * FROM journal_entries
+WHERE id = ? AND user_id = ?;
+
+-- name: GetJournalEntry :one
+SELECT * FROM journal_entries
 WHERE id = ?;
+
+-- name: DeleteJournalEntry :exec
+DELETE FROM journal_entries
+WHERE id = ? AND user_id = ?;
