@@ -30,3 +30,13 @@ ORDER BY projects.created_at DESC;
 -- name: DeleteProject :exec
 DELETE FROM projects
 WHERE id = ?;
+
+-- name: UpdateProject :exec
+UPDATE projects
+set title = ?,
+description = ?,
+image_url = ?,
+link = ?,
+github = ?,
+status = ?
+WHERE id = ?;

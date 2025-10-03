@@ -159,3 +159,37 @@ func (q *Queries) GetProjects(ctx context.Context, arg GetProjectsParams) ([]Pro
 	}
 	return items, nil
 }
+
+const updateProject = `-- name: UpdateProject :exec
+UPDATE projects
+set title = ?,
+description = ?,
+image_url = ?,
+link = ?,
+github = ?,
+status = ?
+WHERE id = ?
+`
+
+type UpdateProjectParams struct {
+	Title       string
+	Description string
+	ImageUrl    sql.NullString
+	Link        sql.NullString
+	Github      sql.NullString
+	Status      sql.NullString
+	ID          int64
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) error {
+	_, err := q.db.ExecContext(ctx, updateProject,
+		arg.Title,
+		arg.Description,
+		arg.ImageUrl,
+		arg.Link,
+		arg.Github,
+		arg.Status,
+		arg.ID,
+	)
+	return err
+}

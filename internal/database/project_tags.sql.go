@@ -26,3 +26,28 @@ func (q *Queries) CreateProjectTag(ctx context.Context, arg CreateProjectTagPara
 	err := row.Scan(&i.ProjectID, &i.TagID)
 	return i, err
 }
+
+const createProjectTagIfNotExists = `-- name: CreateProjectTagIfNotExists :exec
+INSERT OR IGNORE INTO project_tags (project_id, tag_id)
+VALUES (?, ?)
+`
+
+type CreateProjectTagIfNotExistsParams struct {
+	ProjectID int64
+	TagID     int64
+}
+
+func (q *Queries) CreateProjectTagIfNotExists(ctx context.Context, arg CreateProjectTagIfNotExistsParams) error {
+	_, err := q.db.ExecContext(ctx, createProjectTagIfNotExists, arg.ProjectID, arg.TagID)
+	return err
+}
+
+const deleteProjectTag = `-- name: DeleteProjectTag :exec
+DELETE FROM project_tags
+WHERE project_id = ?
+`
+
+func (q *Queries) DeleteProjectTag(ctx context.Context, projectID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteProjectTag, projectID)
+	return err
+}

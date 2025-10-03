@@ -25,22 +25,23 @@ type Project struct {
 	Tags        string    `json:"tags"`
 }
 
+type Tags struct {
+	ID   int `json:"id"`
+	Name string `json:"name"`
+}
+
+type Params struct {
+	ProjectID   int    `json:"project_id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	ImageUrl    string `json:"image_url"`
+	Link        string `json:"link"`
+	Github      string `json:"github"`
+	Status      string `json:"status"`
+	Tags 				[]Tags `json:"tags"`
+}
+
 func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
-	type Tags struct {
-		ID   int `json:"id"`
-		Name string `json:"name"`
-	}
-
-	type Params struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		ImageUrl    string `json:"image_url"`
-		Link        string `json:"link"`
-		Github      string `json:"github"`
-		Status      string `json:"status"`
-		Tags 				[]Tags `json:"tags"`
-	}
-
 	var params Params
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		respondWithError(w, http.StatusBadRequest, "invalid JSON", err)
@@ -148,6 +149,101 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 		UserID: int(userID),
 		Tags: params.Tags,
 	})
+}
+
+func (cfg *apiConfig) updateProject(w http.ResponseWriter, r *http.Request) {
+	var params Params
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid JSON", err)
+		return
+	}
+
+	if params.ProjectID == 0 || params.Title == "" || params.Description == "" || params.Link == "" || params.Github == "" {
+		respondWithError(w, http.StatusBadRequest, "please fill in required fields", nil)
+		return
+	}
+
+	tx, err := cfg.dbConn.Begin()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to start transaction", err)
+		return
+	}
+	defer tx.Rollback()
+
+	qtx := cfg.DB.WithTx(tx)
+
+	err = qtx.UpdateProject(r.Context(), database.UpdateProjectParams{
+		Title: params.Title,
+		Description: params.Description,
+		ImageUrl: sql.NullString{String: params.ImageUrl, Valid: params.ImageUrl != ""},
+		Link: sql.NullString{String: params.Link, Valid: params.Link != ""},
+		Github: sql.NullString{String: params.Github, Valid: params.Github != ""},
+		Status: sql.NullString{String: params.Status, Valid: params.Status != ""}, 
+		ID: int64(params.ProjectID),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to update project", err)
+		return
+	}
+	
+	if len(params.Tags) > 0 {
+		err = qtx.DeleteProjectTag(r.Context(), int64(params.ProjectID))
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "failed to delete project tags", err)
+			return
+		}	
+
+		for _, tag := range params.Tags {
+			if tag.ID == 0 && tag.Name == "" {
+				respondWithError(w, http.StatusBadRequest, "invalid tag", err)
+				return
+			}
+
+			var tagID int64
+			if tag.ID != 0 {
+				tagID = int64(tag.ID)
+			}else {
+				existingTag, err := qtx.SelectTag(r.Context(), tag.Name)
+				if err != nil {
+					if errors.Is(err, sql.ErrNoRows) {
+						newTag, err := qtx.CreateTag(r.Context(), tag.Name)
+						if err != nil {
+							respondWithError(w, http.StatusInternalServerError, "failed to create tag", err)
+							return
+						}
+						tagID = newTag.ID
+					}else {
+						respondWithError(w, http.StatusInternalServerError, "something went wrong getting tags", err)
+						return
+					}
+				}else {
+					tagID = existingTag.ID
+				}
+			}
+
+			err = qtx.CreateProjectTagIfNotExists(r.Context(), database.CreateProjectTagIfNotExistsParams{
+				ProjectID: int64(params.ProjectID),
+				TagID: tagID,
+			})
+			if err != nil {
+				respondWithError(w, http.StatusInternalServerError, "failed to create project tag", err)
+				return
+			}
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to commit transaction", err)
+		return
+	}
+
+
+	respondWithJson(w, http.StatusOK, map[string]string{
+		"message": "successfully updated",
+	})
+
 }
 
 func (cfg *apiConfig) getProjects(w http.ResponseWriter, r *http.Request) {
