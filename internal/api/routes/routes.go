@@ -50,6 +50,9 @@ func SetupRoutes() *http.ServeMux{
 	mux.HandleFunc("DELETE /api/journals/{journalID}", apiCfg.middlewareMustBeLoggedIn(apiCfg.deleteJournalEntry))
 
 	mux.HandleFunc("POST /api/projects", apiCfg.middlewareMustBeLoggedIn(apiCfg.createProject))
+	mux.HandleFunc("GET /api/projects", apiCfg.getProjects)
+	mux.HandleFunc("GET /api/projects/{projectID}", apiCfg.getProject)
+	mux.HandleFunc("DELETE /api/projects/{projectID}", apiCfg.middlewareMustBeLoggedIn(apiCfg.deleteProject))
 
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 

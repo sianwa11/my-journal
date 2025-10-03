@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -76,6 +78,10 @@ func (cfg *apiConfig) getJournalEntry(w http.ResponseWriter, r *http.Request) {
 
 	journalEntry, err := cfg.DB.GetJournalEntry(r.Context(), int64(journalID))
 	if err != nil {
+		if errors.Is(err,sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "journal not found", nil)
+			return
+		}
 		respondWithError(w, http.StatusInternalServerError, "failed to get journal", err)
 		return
 	}

@@ -51,3 +51,111 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 	)
 	return i, err
 }
+
+const deleteProject = `-- name: DeleteProject :exec
+DELETE FROM projects
+WHERE id = ?
+`
+
+func (q *Queries) DeleteProject(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteProject, id)
+	return err
+}
+
+const getProject = `-- name: GetProject :one
+SELECT
+  projects.id as project_id,
+  projects.title,
+  projects.description,
+  projects.image_url,
+  projects.link,
+  projects.github,
+  projects.status,
+  projects.created_at,
+  projects.user_id,
+  tags.id as tag_id,
+  GROUP_CONCAT(tags.name, ', ') as tags
+FROM projects
+LEFT JOIN project_tags ON projects.id = project_tags.project_id
+LEFT JOIN tags ON project_tags.tag_id = tags.id
+WHERE projects.id = ?
+ORDER BY projects.created_at DESC
+`
+
+type GetProjectRow struct {
+	ProjectID   int64
+	Title       string
+	Description string
+	ImageUrl    sql.NullString
+	Link        sql.NullString
+	Github      sql.NullString
+	Status      sql.NullString
+	CreatedAt   sql.NullTime
+	UserID      int64
+	TagID       sql.NullInt64
+	Tags        string
+}
+
+func (q *Queries) GetProject(ctx context.Context, id int64) (GetProjectRow, error) {
+	row := q.db.QueryRowContext(ctx, getProject, id)
+	var i GetProjectRow
+	err := row.Scan(
+		&i.ProjectID,
+		&i.Title,
+		&i.Description,
+		&i.ImageUrl,
+		&i.Link,
+		&i.Github,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UserID,
+		&i.TagID,
+		&i.Tags,
+	)
+	return i, err
+}
+
+const getProjects = `-- name: GetProjects :many
+SELECT id, title, description, image_url, link, github, status, created_at, updated_at, user_id FROM projects 
+ORDER BY created_at DESC
+LIMIT ? OFFSET ?
+`
+
+type GetProjectsParams struct {
+	Limit  int64
+	Offset int64
+}
+
+func (q *Queries) GetProjects(ctx context.Context, arg GetProjectsParams) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, getProjects, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Project
+	for rows.Next() {
+		var i Project
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.ImageUrl,
+			&i.Link,
+			&i.Github,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

@@ -5,9 +5,25 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/sianwa11/my-journal/internal/database"
 )
+
+type Project struct {
+	ProjectID   int       `json:"project_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	ImageURL    string    `json:"image_url"`
+	Link        string    `json:"link"`
+	Github      string    `json:"github"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	UserID      int       `json:"user_id"`
+	Tags        string    `json:"tags"`
+}
 
 func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 	type Tags struct {
@@ -132,4 +148,113 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 		UserID: int(userID),
 		Tags: params.Tags,
 	})
+}
+
+func (cfg *apiConfig) getProjects(w http.ResponseWriter, r *http.Request) {
+	limit := r.URL.Query().Get("limit")
+	if limit == "" {
+		limit = "10"
+	}
+
+	offset := r.URL.Query().Get("offset")
+	if offset == "" {
+		offset = "0"
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid limit", err)
+		return
+	}
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid offset", err)
+		return
+	}
+
+	projects, err := cfg.DB.GetProjects(r.Context(), database.GetProjectsParams{
+		Limit: int64(limitInt),
+		Offset: int64(offsetInt),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to get projects", err)
+		return
+	}
+
+	projectsArr := []Project{}
+	for _, project := range projects {
+		projectsArr = append(projectsArr, Project{
+			ProjectID: int(project.ID),
+			Title: project.Title,
+			Description: project.Description,
+			ImageURL: project.ImageUrl.String,
+			Link: project.Link.String,
+			Github: project.Github.String,
+			Status: project.Status.String,
+			CreatedAt: project.CreatedAt.Time,
+			UpdatedAt: project.UpdatedAt.Time,
+			UserID: int(project.UserID),
+		})
+	}
+
+	respondWithJson(w, http.StatusOK, projectsArr)
+}
+
+func (cfg *apiConfig) getProject(w http.ResponseWriter, r *http.Request) {
+	projectIDStr := r.PathValue("projectID")
+	if projectIDStr == "" {
+		respondWithError(w, http.StatusBadRequest, "empty projectID", nil)
+		return
+	}
+
+	projectID, err := strconv.Atoi(projectIDStr)
+	if err != nil {
+		respondWithError(w, http.StatusBadGateway, "invalid projectID", err)
+		return
+	}
+
+	project, err := cfg.DB.GetProject(r.Context(), int64(projectID))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "project not found", nil)
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "failed to get project", err)
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, Project{
+		ProjectID: int(project.ProjectID),
+		Title: project.Title,
+		Description: project.Description,
+		ImageURL: project.ImageUrl.String,
+		Link: project.Link.String,
+		Github: project.Github.String,
+		Status: project.Status.String,
+		CreatedAt: project.CreatedAt.Time,
+		UserID: int(project.UserID),
+		Tags: project.Tags,
+	})
+}
+
+func (cfg *apiConfig) deleteProject(w http.ResponseWriter, r *http.Request) {
+	projectIDStr := r.PathValue("projectID")
+	if projectIDStr == "" {
+		respondWithError(w, http.StatusBadRequest, "missing projectID", nil)
+		return
+	}
+
+	projectID, err := strconv.Atoi(projectIDStr)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid projectID", err)
+	}
+
+	err = cfg.DB.DeleteProject(r.Context(), int64(projectID))
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to delete project", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
