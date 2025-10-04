@@ -4,3 +4,9 @@ out
 commons.txt
 assets/
 samples/
+node_modules/
+.vscode/
+dist/
+.DS_Store
+*.log
+*.sqlite3

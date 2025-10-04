@@ -2,6 +2,7 @@ package routes
 
 import (
 	"database/sql"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -27,6 +28,7 @@ func SetupRoutes() *http.ServeMux{
 	
 	secret := os.Getenv("SECRET")
 	dbUrl := os.Getenv("DB_URL")
+	const rootPath = "."
 
 	db, err := sql.Open("sqlite3", dbUrl)
 	if err != nil {
@@ -41,6 +43,25 @@ func SetupRoutes() *http.ServeMux{
 	apiCfg.dbConn = db
 	
 	mux := http.NewServeMux()
+
+	// Serves static files from the "static" directory
+	fileServer := http.FileServer(http.Dir("./static/"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
+
+	// Parse templates
+	tmpl := template.Must(template.ParseGlob("template/*.html"))
+
+
+	// Dashboard route using template
+	mux.HandleFunc("/admin/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		err := tmpl.ExecuteTemplate(w, "index.html", map[string]interface{}{
+			"Title": "Admin Dashboard",
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
 	mux.HandleFunc("/api/healthz", healthCheck)
 
 	mux.HandleFunc("GET /api/journals", apiCfg.getJournalEntries)
