@@ -5,10 +5,521 @@
   <meta charset="UTF-8">
   <title>{{ .Title }}</title>
   <link href="/static/css/output.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
 
-<body class="bg-gray-100 text-gray-800">
-  <h1 class="text-3xl font-bold">Welcome to {{ .Title }}</h1>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-cyan-50 min-h-screen">
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">
+              {{ .Title }}
+            </h1>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="welcomeMessage" class="text-gray-700 font-medium">Welcome!</span>
+          <button onclick="logout()"
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Hero Section -->
+    <div class="text-center mb-16">
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+        Your Creative Space
+      </h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        Manage your thoughts and showcase your work in one beautiful place
+      </p>
+    </div>
+
+    <!-- Dashboard Cards -->
+    <div class="grid md:grid-cols-2 gap-8 mb-16">
+      <!-- Journals Card -->
+      <div class="group relative overflow-hidden">
+        <div
+          class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl blur-xl">
+        </div>
+        <div
+          class="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-8 border border-gray-100">
+          <!-- Journal Icon -->
+          <div
+            class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+              </path>
+            </svg>
+          </div>
+
+          <h3 class="text-2xl font-bold text-gray-900 mb-3">Journal Entries</h3>
+          <p class="text-gray-600 mb-6">Capture your thoughts, ideas, and daily reflections</p>
+
+          <!-- Stats -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="text-center">
+              <div id="journal-count" class="text-2xl font-bold text-purple-600">-</div>
+              <div class="text-sm text-gray-500">Total Entries</div>
+            </div>
+            <div class="text-center">
+              <div id="journal-recent" class="text-2xl font-bold text-pink-600">-</div>
+              <div class="text-sm text-gray-500">This Week</div>
+            </div>
+          </div>
+
+          <button onclick="navigateToJournals()"
+            class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+            Manage Journals
+          </button>
+        </div>
+      </div>
+
+      <!-- Projects Card -->
+      <div class="group relative overflow-hidden">
+        <div
+          class="absolute inset-0 bg-gradient-to-br from-cyan-400 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl blur-xl">
+        </div>
+        <div
+          class="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-8 border border-gray-100">
+          <!-- Projects Icon -->
+          <div
+            class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+              </path>
+            </svg>
+          </div>
+
+          <h3 class="text-2xl font-bold text-gray-900 mb-3">Projects</h3>
+          <p class="text-gray-600 mb-6">Showcase your work and track your progress</p>
+
+          <!-- Stats -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="text-center">
+              <div id="project-count" class="text-2xl font-bold text-cyan-600">-</div>
+              <div class="text-sm text-gray-500">Total Projects</div>
+            </div>
+            <div class="text-center">
+              <div id="project-active" class="text-2xl font-bold text-blue-600">-</div>
+              <div class="text-sm text-gray-500">Active</div>
+            </div>
+          </div>
+
+          <button onclick="navigateToProjects()"
+            class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+            Manage Projects
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+      <h3 class="text-xl font-bold text-gray-900 mb-6 text-center">Quick Actions</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <button onclick="openJournalModal()"
+          class="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors duration-200 group">
+          <div
+            class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-200">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-purple-700">New Journal</span>
+        </button>
+
+        <button onclick="openProjectModal()"
+          class="flex flex-col items-center p-4 bg-cyan-50 hover:bg-cyan-100 rounded-xl transition-colors duration-200 group">
+          <div
+            class="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-200">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-cyan-700">New Project</span>
+        </button>
+
+        <button onclick="viewRecentJournals()"
+          class="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-xl transition-colors duration-200 group">
+          <div
+            class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-200">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-green-700">Recent</span>
+        </button>
+
+        <button onclick="viewStats()"
+          class="flex flex-col items-center p-4 bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors duration-200 group">
+          <div
+            class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-200">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z">
+              </path>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-orange-700">Statistics</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Journal Modal -->
+  <div id="journalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Create New Journal Entry</h3>
+          <button onclick="closeJournalModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <form id="journalForm" onsubmit="submitJournal(event)">
+          <div class="mb-4">
+            <label for="journalTitle" class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+            <input type="text" id="journalTitle" name="title" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+          </div>
+
+          <div class="mb-6">
+            <label for="journalContent" class="block text-sm font-medium text-gray-700 mb-2">Content</label>
+            <textarea id="journalContent" name="content" rows="6" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all resize-none"></textarea>
+          </div>
+
+          <div class="flex space-x-3">
+            <button type="button" onclick="closeJournalModal()"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button type="submit"
+              class="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105">
+              Create Entry
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Modal -->
+  <div id="projectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Create New Project</h3>
+          <button onclick="closeProjectModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <form id="projectForm" onsubmit="submitProject(event)">
+          <div class="mb-4">
+            <label for="projectName" class="block text-sm font-medium text-gray-700 mb-2">Project Name</label>
+            <input type="text" id="projectName" name="name" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all">
+          </div>
+
+          <div class="mb-4">
+            <label for="projectDescription" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea id="projectDescription" name="description" rows="4" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all resize-none"></textarea>
+          </div>
+
+          <div class="mb-6">
+            <label for="projectGithubUrl" class="block text-sm font-medium text-gray-700 mb-2">GitHub URL
+              (Optional)</label>
+            <input type="url" id="projectGithubUrl" name="github_url"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+              placeholder="https://github.com/username/repo">
+          </div>
+
+          <div class="flex space-x-3">
+            <button type="button" onclick="closeProjectModal()"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button type="submit"
+              class="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all transform hover:scale-105">
+              Create Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Check authentication on page load
+    window.addEventListener('DOMContentLoaded', async function () {
+      const token = localStorage.getItem('accessToken');
+      const userName = localStorage.getItem('userName');
+
+      if (!token) {
+        window.location.href = '/admin';
+        return;
+      }
+
+      // Set welcome message
+      if (userName) {
+        document.getElementById('welcomeMessage').textContent = `Welcome, ${userName}!`;
+      }
+
+      // Load initial data and stats
+      await loadJournalsStats();
+      await loadProjectsStats();
+    });
+
+    // Modal functions
+    function openJournalModal() {
+      document.getElementById('journalModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeJournalModal() {
+      document.getElementById('journalModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+      document.getElementById('journalForm').reset();
+    }
+
+    function openProjectModal() {
+      document.getElementById('projectModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeProjectModal() {
+      document.getElementById('projectModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+      document.getElementById('projectForm').reset();
+    }
+
+    // API functions
+    async function makeAuthenticatedRequest(url, options = {}) {
+      let token = localStorage.getItem('accessToken');
+
+      const requestOptions = {
+        ...options,
+        headers: {
+          ...options.headers,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      let response = await fetch(url, requestOptions);
+
+      if (response.status === 401) {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          const refreshResponse = await fetch('/api/refresh', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`
+            }
+          });
+
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            localStorage.setItem('accessToken', refreshData.token);
+            requestOptions.headers['Authorization'] = `Bearer ${refreshData.token}`;
+            response = await fetch(url, requestOptions);
+          } else {
+            localStorage.clear();
+            window.location.href = '/admin';
+          }
+        }
+      }
+
+      return response;
+    }
+
+    // Form submission functions
+    async function submitJournal(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const data = {
+        title: formData.get('title'),
+        content: formData.get('content')
+      };
+
+      try {
+        const response = await makeAuthenticatedRequest('/api/journals', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          closeJournalModal();
+          await loadJournalsStats();
+          showNotification('Journal entry created successfully!', 'success');
+        } else {
+          const error = await response.json();
+          showNotification('Error creating journal: ' + (error.error || 'Unknown error'), 'error');
+        }
+      } catch (error) {
+        showNotification('Error creating journal: ' + error.message, 'error');
+      }
+    }
+
+    async function submitProject(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const data = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        github_url: formData.get('github_url') || ''
+      };
+
+      try {
+        const response = await makeAuthenticatedRequest('/api/projects', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          closeProjectModal();
+          await loadProjectsStats();
+          showNotification('Project created successfully!', 'success');
+        } else {
+          const error = await response.json();
+          showNotification('Error creating project: ' + (error.error || 'Unknown error'), 'error');
+        }
+      } catch (error) {
+        showNotification('Error creating project: ' + error.message, 'error');
+      }
+    }
+
+    // Notification function
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+      notification.textContent = message;
+
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    async function loadJournalsStats() {
+      try {
+        const response = await fetch('/api/journals');
+        const journals = await response.json();
+
+        if (response.ok && journals) {
+          document.getElementById('journal-count').textContent = journals.length || 0;
+
+          // Calculate recent entries (last 7 days)
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const recentCount = journals.filter(j => new Date(j.created_at) > oneWeekAgo).length;
+          document.getElementById('journal-recent').textContent = recentCount;
+        }
+      } catch (error) {
+        console.error('Error loading journal stats:', error);
+        document.getElementById('journal-count').textContent = '0';
+        document.getElementById('journal-recent').textContent = '0';
+      }
+    }
+
+    async function loadProjectsStats() {
+      try {
+        const response = await fetch('/api/projects');
+        const projects = await response.json();
+
+        if (response.ok && projects) {
+          document.getElementById('project-count').textContent = projects.length || 0;
+          document.getElementById('project-active').textContent = projects.length || 0;
+        }
+      } catch (error) {
+        console.error('Error loading project stats:', error);
+        document.getElementById('project-count').textContent = '0';
+        document.getElementById('project-active').textContent = '0';
+      }
+    }
+
+    // Navigation functions
+    function navigateToJournals() {
+      window.location.href = '/admin/dashboard?tab=journals';
+    }
+
+    function navigateToProjects() {
+      window.location.href = '/admin/dashboard?tab=projects';
+    }
+
+    // Quick action functions (updated to use modals)
+    function createNewJournal() {
+      openJournalModal();
+    }
+
+    function createNewProject() {
+      openProjectModal();
+    }
+
+    function viewRecentJournals() {
+      window.location.href = '/admin/dashboard?tab=journals&filter=recent';
+    }
+
+    function viewStats() {
+      alert('Statistics page coming soon!');
+    }
+
+    // Close modals when clicking outside
+    window.addEventListener('click', function (event) {
+      const journalModal = document.getElementById('journalModal');
+      const projectModal = document.getElementById('projectModal');
+
+      if (event.target === journalModal) {
+        closeJournalModal();
+      }
+      if (event.target === projectModal) {
+        closeProjectModal();
+      }
+    });
+
+    // Logout function
+    async function logout() {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        try {
+          await fetch('/api/revoke', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`
+            }
+          });
+        } catch (error) {
+          console.error('Error revoking token:', error);
+        }
+      }
+
+      localStorage.clear();
+      window.location.href = '/admin';
+    }
+  </script>
 </body>
 
 </html>

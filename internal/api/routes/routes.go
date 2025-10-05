@@ -62,6 +62,15 @@ func SetupRoutes() *http.ServeMux{
 		}
 	})
 
+	mux.HandleFunc("/admin", func(w http.ResponseWriter, r *http.Request) {
+		err := tmpl.ExecuteTemplate(w, "login.html", map[string]interface{}{
+			"Title": "Admin Login",
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
 	mux.HandleFunc("/api/healthz", healthCheck)
 
 	mux.HandleFunc("GET /api/journals", apiCfg.getJournalEntries)
