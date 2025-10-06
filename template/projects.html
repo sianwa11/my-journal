@@ -308,6 +308,7 @@
     let currentEditId = null;
     let deleteId = null;
     let projectTags = [];
+    let controller;
     let tagify; // Add this to store the Tagify instance
 
     // Check authentication on page load
@@ -339,8 +340,9 @@
 
       tagify = new Tagify(inputElem, {
         // Configuration options
-        whitelist: ['JavaScript', 'React', 'Node.js', 'Python', 'CSS', 'HTML', 'Vue.js', 'Angular', 'TypeScript', 'PHP', 'Laravel', 'Express', 'MongoDB', 'MySQL', 'PostgreSQL', 'Firebase', 'AWS', 'Docker', 'Git'],
-        maxTags: 10,
+        // whitelist: ['JavaScript', 'React', 'Node.js', 'Python', 'CSS', 'HTML', 'Vue.js', 'Angular', 'TypeScript', 'PHP', 'Laravel', 'Express', 'MongoDB', 'MySQL', 'PostgreSQL', 'Firebase', 'AWS', 'Docker', 'Git'],
+        whitelist: [],
+        maxTags: 20,
         dropdown: {
           maxItems: 20,
           classname: 'tagify__inline__suggestions',
@@ -366,13 +368,31 @@
       tagify.on('edit:updated', function (e) {
         updateProjectTagsFromTagify();
       });
+
+      tagify.on('input', function (e) {
+        const value = e.detail.value;
+        tagify.whitelist = null // reset the whitelist
+
+        controller && controller.abort()
+        controller = new AbortController()
+
+        tagify.loading(true)
+
+        fetch('/api/tags?q=' + value, { signal: controller.signal })
+          .then(RES => RES.json())
+          .then(function (newWhitelist) {
+            tagify.whitelist = newWhitelist // update whitelist Array in-place
+            updateProjectTagsFromTagify();
+            tagify.loading(false).dropdown.show(value) // render the suggestions dropdown
+          })
+      });
     }
 
     function updateProjectTagsFromTagify() {
       // Convert Tagify tags to our projectTags format
       projectTags = tagify.value.map(tag => ({
         name: tag.value,
-        id: 0
+        id: tag.id || 0
       }));
     }
 
