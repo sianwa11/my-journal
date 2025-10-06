@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }}</title>
+  <link href="/static/css/output.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="bg-gradient-to-br from-indigo-50 via-white to-cyan-50 min-h-screen">
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-4">
+          <a href="/admin/dashboard" class="text-gray-500 hover:text-gray-700 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+              </path>
+            </svg>
+          </a>
+          <h1 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+            {{ .Title }}
+          </h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="welcomeMessage" class="text-gray-700 font-medium">Welcome!</span>
+          <button onclick="logout()"
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+      <div>
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Projects</h2>
+        <p class="text-gray-600">Showcase your work and track your progress</p>
+      </div>
+      <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+        <button onclick="openCreateModal()"
+          class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all duration-200 transform hover:scale-105 shadow-lg">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          New Project
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-100">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+          <div class="relative">
+            <input type="text" id="searchInput" placeholder="Search projects..."
+              class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+          </div>
+          <select id="statusFilter"
+            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <option value="">All Status</option>
+            <option value="planning">Planning</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="on-hold">On Hold</option>
+          </select>
+          <select id="sortSelect"
+            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="title">Title A-Z</option>
+          </select>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-gray-600">
+          <span>Total: <span id="totalCount" class="font-semibold text-cyan-600">0</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="flex items-center justify-center py-16">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
+      <span class="ml-3 text-gray-600">Loading projects...</span>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-16">
+      <div
+        class="mx-auto h-24 w-24 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-full flex items-center justify-center mb-6">
+        <svg class="h-12 w-12 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+          </path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">No projects yet</h3>
+      <p class="text-gray-600 mb-6">Start showcasing your work by creating your first project</p>
+      <button onclick="openCreateModal()"
+        class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all duration-200 transform hover:scale-105 shadow-lg">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Create Your First Project
+      </button>
+    </div>
+
+    <!-- Projects Grid -->
+    <div id="projectsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+      <!-- Project cards will be inserted here -->
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+      <div class="text-red-600 mb-4">
+        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.864-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z">
+          </path>
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold text-red-900 mb-2">Error Loading Projects</h3>
+      <p id="errorMessage" class="text-red-700 mb-4"></p>
+      <button onclick="loadProjects()"
+        class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+        Try Again
+      </button>
+    </div>
+  </main>
+
+  <!-- Create/Edit Modal -->
+  <div id="projectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[95vh] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <h3 id="modalTitle" class="text-xl font-bold text-white">Create New Project</h3>
+          <button onclick="closeModal()" class="text-white hover:text-gray-200 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Content - Scrollable -->
+      <div class="overflow-y-auto max-h-[calc(95vh-120px)]">
+        <form id="projectForm" onsubmit="submitProject(event)" class="p-6 space-y-6">
+          <input type="hidden" id="projectId">
+
+          <!-- Basic Information -->
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Basic Information
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label for="projectTitle" class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                <input type="text" id="projectTitle" name="title" required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all">
+              </div>
+
+              <div class="md:col-span-2">
+                <label for="projectDescription" class="block text-sm font-medium text-gray-700 mb-2">Description
+                  *</label>
+                <textarea id="projectDescription" name="description" rows="4" required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all resize-none"
+                  placeholder="Describe your project..."></textarea>
+              </div>
+
+              <div>
+                <label for="projectStatus" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select id="projectStatus" name="status"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all">
+                  <option value="">Select Status</option>
+                  <option value="planning">Planning</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="on-hold">On Hold</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="projectImageUrl" class="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                <input type="url" id="projectImageUrl" name="image_url"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                  placeholder="https://example.com/image.jpg">
+              </div>
+            </div>
+          </div>
+
+          <!-- Links -->
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                </path>
+              </svg>
+              Links
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="projectLink" class="block text-sm font-medium text-gray-700 mb-2">Live Demo URL *</label>
+                <input type="url" id="projectLink" name="link" required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                  placeholder="https://your-project.com">
+              </div>
+
+              <div>
+                <label for="projectGithub" class="block text-sm font-medium text-gray-700 mb-2">GitHub URL *</label>
+                <input type="url" id="projectGithub" name="github" required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                  placeholder="https://github.com/username/repo">
+              </div>
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                </path>
+              </svg>
+              Tags
+            </h4>
+
+            <div class="space-y-4">
+              <input type="text" id="tagInput" placeholder="Add tags..."
+                class="flex-1 px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all">
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="flex space-x-3 pt-4 border-t border-gray-200">
+            <button type="button" onclick="closeModal()"
+              class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" id="submitButton"
+              class="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all transform hover:scale-105 shadow-lg">
+              <span id="submitText">Create Project</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+      <div class="p-6">
+        <div class="flex items-center mb-4">
+          <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.864-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z">
+              </path>
+            </svg>
+          </div>
+        </div>
+        <div class="text-center">
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Delete Project</h3>
+          <p class="text-sm text-gray-500 mb-6">Are you sure you want to delete this project? This action cannot be
+            undone.</p>
+        </div>
+        <div class="flex space-x-3">
+          <button onclick="closeDeleteModal()"
+            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button onclick="confirmDelete()"
+            class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let projects = [];
+    let filteredProjects = [];
+    let currentEditId = null;
+    let deleteId = null;
+    let projectTags = [];
+    let tagify; // Add this to store the Tagify instance
+
+    // Check authentication on page load
+    window.addEventListener('DOMContentLoaded', async function () {
+      const token = localStorage.getItem('accessToken');
+      const userName = localStorage.getItem('userName');
+
+      if (!token) {
+        window.location.href = '/admin';
+        return;
+      }
+
+      if (userName) {
+        document.getElementById('welcomeMessage').textContent = `Welcome, ${userName}!`;
+      }
+
+      await loadProjects();
+      setupEventListeners();
+      initializeTagify(); // Initialize Tagify after DOM is loaded
+    });
+
+    function initializeTagify() {
+      const inputElem = document.getElementById('tagInput');
+
+      // Destroy existing instance if it exists
+      if (tagify) {
+        tagify.destroy();
+      }
+
+      tagify = new Tagify(inputElem, {
+        // Configuration options
+        whitelist: ['JavaScript', 'React', 'Node.js', 'Python', 'CSS', 'HTML', 'Vue.js', 'Angular', 'TypeScript', 'PHP', 'Laravel', 'Express', 'MongoDB', 'MySQL', 'PostgreSQL', 'Firebase', 'AWS', 'Docker', 'Git'],
+        maxTags: 10,
+        dropdown: {
+          maxItems: 20,
+          classname: 'tagify__inline__suggestions',
+          enabled: 0,
+          closeOnSelect: false
+        },
+        placeholder: 'Add tags for your project...',
+        editTags: true,
+        duplicates: false,
+        enforceWhitelist: false, // Allow custom tags
+        delimiters: ',| ', // Allow comma or space as delimiters
+      });
+
+      // Listen to Tagify events
+      tagify.on('add', function (e) {
+        updateProjectTagsFromTagify();
+      });
+
+      tagify.on('remove', function (e) {
+        updateProjectTagsFromTagify();
+      });
+
+      tagify.on('edit:updated', function (e) {
+        updateProjectTagsFromTagify();
+      });
+    }
+
+    function updateProjectTagsFromTagify() {
+      // Convert Tagify tags to our projectTags format
+      projectTags = tagify.value.map(tag => ({
+        name: tag.value,
+        id: 0
+      }));
+    }
+
+    function setupEventListeners() {
+      // Search and filter functionality
+      document.getElementById('searchInput').addEventListener('input', filterProjects);
+      document.getElementById('statusFilter').addEventListener('change', filterProjects);
+      document.getElementById('sortSelect').addEventListener('change', filterProjects);
+
+      // Close modals when clicking outside
+      document.getElementById('projectModal').addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+      });
+
+      document.getElementById('deleteModal').addEventListener('click', function (e) {
+        if (e.target === this) closeDeleteModal();
+      });
+    }
+
+    async function makeAuthenticatedRequest(url, options = {}) {
+      let token = localStorage.getItem('accessToken');
+
+      const requestOptions = {
+        ...options,
+        headers: {
+          ...options.headers,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      let response = await fetch(url, requestOptions);
+
+      if (response.status === 401) {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          const refreshResponse = await fetch('/api/refresh', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`
+            }
+          });
+
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            localStorage.setItem('accessToken', refreshData.token);
+            requestOptions.headers['Authorization'] = `Bearer ${refreshData.token}`;
+            response = await fetch(url, requestOptions);
+          } else {
+            localStorage.clear();
+            window.location.href = '/admin';
+          }
+        }
+      }
+
+      return response;
+    }
+
+    async function loadProjects() {
+      const loadingState = document.getElementById('loadingState');
+      const errorState = document.getElementById('errorState');
+      const emptyState = document.getElementById('emptyState');
+      const projectsGrid = document.getElementById('projectsGrid');
+
+      try {
+        loadingState.classList.remove('hidden');
+        errorState.classList.add('hidden');
+        emptyState.classList.add('hidden');
+        projectsGrid.classList.add('hidden');
+
+        const response = await fetch('/api/projects');
+        const data = await response.json();
+
+        loadingState.classList.add('hidden');
+
+        if (response.ok) {
+          projects = data || [];
+          filteredProjects = [...projects];
+
+          if (projects.length === 0) {
+            emptyState.classList.remove('hidden');
+          } else {
+            projectsGrid.classList.remove('hidden');
+            displayProjects(filteredProjects);
+          }
+
+          updateTotalCount();
+        } else {
+          throw new Error(data.error || 'Failed to load projects');
+        }
+      } catch (error) {
+        loadingState.classList.add('hidden');
+        errorState.classList.remove('hidden');
+        document.getElementById('errorMessage').textContent = error.message;
+      }
+    }
+
+    function displayProjects(projectsToShow) {
+      const grid = document.getElementById('projectsGrid');
+
+      if (projectsToShow.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">No projects match your search.</div>';
+        return;
+      }
+
+      grid.innerHTML = projectsToShow.map(project => `
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden">
+          ${project.image_url ? `
+            <div class="h-48 bg-gray-200 overflow-hidden">
+              <img src="${escapeHtml(project.image_url)}" alt="${escapeHtml(project.title)}" 
+                   class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center h-full bg-gradient-to-br from-cyan-100 to-blue-100\\'>No Image</div>'">
+            </div>
+          ` : `
+            <div class="h-48 bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center">
+              <svg class="w-16 h-16 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+            </div>
+          `}
+          
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-3">
+              <h3 class="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">${escapeHtml(project.title)}</h3>
+              <div class="flex space-x-1 ml-2">
+                <button onclick="editProject(${project.project_id})" 
+                        class="p-2 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                </button>
+                <button onclick="deleteProject(${project.project_id})" 
+                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            ${project.status ? `
+              <div class="mb-3">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClasses(project.status)}">
+                  ${escapeHtml(project.status)}
+                </span>
+              </div>
+            ` : ''}
+            
+            <div class="text-gray-600 mb-4 line-clamp-3">
+              ${escapeHtml(project.description.substring(0, 120))}${project.description.length > 120 ? '...' : ''}
+            </div>
+            
+            <div class="flex items-center justify-between text-sm mb-4">
+              <span class="text-gray-500">${new Date(project.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })}</span>
+            </div>
+            
+            <div class="flex space-x-2">
+              ${project.link ? `
+                <a href="${escapeHtml(project.link)}" target="_blank" 
+                   class="flex-1 text-center px-3 py-2 bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 transition-colors text-sm font-medium">
+                  Live Demo
+                </a>
+              ` : ''}
+              ${project.github ? `
+                <a href="${escapeHtml(project.github)}" target="_blank" 
+                   class="flex-1 text-center px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">
+                  GitHub
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getStatusBadgeClasses(status) {
+      const classes = {
+        'planning': 'bg-yellow-100 text-yellow-800',
+        'in-progress': 'bg-blue-100 text-blue-800',
+        'completed': 'bg-green-100 text-green-800',
+        'on-hold': 'bg-gray-100 text-gray-800'
+      };
+      return classes[status] || 'bg-gray-100 text-gray-800';
+    }
+
+    function filterProjects() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('statusFilter').value;
+      const sortBy = document.getElementById('sortSelect').value;
+
+      // Filter
+      filteredProjects = projects.filter(project => {
+        const matchesSearch = project.title.toLowerCase().includes(searchTerm) ||
+          project.description.toLowerCase().includes(searchTerm);
+        const matchesStatus = !statusFilter || project.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      });
+
+      // Sort
+      filteredProjects.sort((a, b) => {
+        switch (sortBy) {
+          case 'newest':
+            return new Date(b.created_at) - new Date(a.created_at);
+          case 'oldest':
+            return new Date(a.created_at) - new Date(b.created_at);
+          case 'title':
+            return a.title.localeCompare(b.title);
+          default:
+            return 0;
+        }
+      });
+
+      displayProjects(filteredProjects);
+      updateTotalCount();
+    }
+
+    function updateTotalCount() {
+      document.getElementById('totalCount').textContent = filteredProjects.length;
+    }
+
+    // Modal functions
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Create New Project';
+      document.getElementById('submitText').textContent = 'Create Project';
+      document.getElementById('projectForm').reset();
+      document.getElementById('projectId').value = '';
+
+      // Clear Tagify tags
+      if (tagify) {
+        tagify.removeAllTags();
+      }
+
+      projectTags = [];
+      currentEditId = null;
+      document.getElementById('projectModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    async function editProject(id) {
+
+      const response = await makeAuthenticatedRequest("/api/projects/" + id, {
+        method: 'GET'
+      })
+
+      if (!response.ok) {
+        showNotification('Error fetching project details', 'error');
+        return;
+      }
+
+      const project = await response.json();
+
+      if (!project) return;
+
+      document.getElementById('modalTitle').textContent = 'Edit Project';
+      document.getElementById('submitText').textContent = 'Update Project';
+      document.getElementById('projectId').value = project.project_id;
+      document.getElementById('projectTitle').value = project.title;
+      document.getElementById('projectDescription').value = project.description;
+      document.getElementById('projectStatus').value = project.status || '';
+      document.getElementById('projectImageUrl').value = project.image_url || '';
+      document.getElementById('projectLink').value = project.link || '';
+      document.getElementById('projectGithub').value = project.github || '';
+
+      // Set tags in Tagify
+      if (tagify && project.tags !== "") {
+        const tagsForTagify = project.tags.split(" ").map(tag => ({
+          value: typeof tag === 'string' ? tag : tag.name
+        }));
+        tagify.removeAllTags();
+        tagify.addTags(tagsForTagify);
+        updateProjectTagsFromTagify();
+      }
+
+      currentEditId = id;
+      document.getElementById('projectModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('projectModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+      currentEditId = null;
+      projectTags = [];
+
+      // Clear Tagify
+      if (tagify) {
+        tagify.removeAllTags();
+      }
+    }
+
+    function deleteProject(id) {
+      deleteId = id;
+      document.getElementById('deleteModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+      deleteId = null;
+    }
+
+    async function submitProject(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const data = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        image_url: formData.get('image_url') || '',
+        link: formData.get('link'),
+        github: formData.get('github'),
+        status: formData.get('status') || '',
+        tags: projectTags
+      };
+
+      if (currentEditId) {
+        data.project_id = currentEditId;
+      }
+
+      const submitButton = document.getElementById('submitButton');
+      const submitText = document.getElementById('submitText');
+      const originalText = submitText.textContent;
+
+      try {
+        submitButton.disabled = true;
+        submitText.textContent = currentEditId ? 'Updating...' : 'Creating...';
+
+        const response = await makeAuthenticatedRequest('/api/projects', {
+          method: currentEditId ? 'PUT' : 'POST',
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          closeModal();
+          await loadProjects();
+          showNotification(currentEditId ? 'Project updated successfully!' : 'Project created successfully!', 'success');
+        } else {
+          const error = await response.json();
+          showNotification('Error saving project: ' + (error.error || 'Unknown error'), 'error');
+        }
+      } catch (error) {
+        showNotification('Error saving project: ' + error.message, 'error');
+      } finally {
+        submitButton.disabled = false;
+        submitText.textContent = originalText;
+      }
+    }
+
+    async function confirmDelete() {
+      if (!deleteId) return;
+
+      try {
+        const response = await makeAuthenticatedRequest(`/api/projects/${deleteId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          closeDeleteModal();
+          await loadProjects();
+          showNotification('Project deleted successfully!', 'success');
+        } else {
+          const error = await response.json();
+          showNotification('Error deleting project: ' + (error.error || 'Unknown error'), 'error');
+        }
+      } catch (error) {
+        showNotification('Error deleting project: ' + error.message, 'error');
+      }
+    }
+
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+      notification.textContent = message;
+
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, function (m) { return map[m]; });
+    }
+
+    async function logout() {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        try {
+          await fetch('/api/revoke', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`
+            }
+          });
+        } catch (error) {
+          console.error('Error revoking token:', error);
+        }
+      }
+
+      localStorage.clear();
+      window.location.href = '/admin';
+    }
+  </script>
+
+  <script>
+    // This script will run after the DOM is loaded and Tagify is initialized in the main script
+    // The initialization is now handled in the initializeTagify() function above
+  </script>
+
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Custom Tagify styles to match your design */
+    .tagify {
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      min-height: 3rem;
+      transition: all 0.2s;
+    }
+
+    .tagify:focus-within {
+      border-color: #06b6d4;
+      box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.5);
+    }
+
+    .tagify__tag {
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      color: white;
+      border: none;
+      border-radius: 9999px;
+      padding: 0.25rem 0.75rem;
+      margin: 0.125rem;
+      font-size: 0.875rem;
+    }
+
+    .tagify__tag:hover {
+      background: linear-gradient(135deg, #0891b2, #2563eb);
+    }
+
+    .tagify__tag__removeBtn {
+      color: rgba(255, 255, 255, 0.7);
+      margin-left: 0.5rem;
+    }
+
+    .tagify__tag__removeBtn:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+    }
+
+    .tagify__input {
+      color: #374151;
+      font-size: 0.875rem;
+      min-width: 8rem;
+    }
+
+    .tagify__dropdown {
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .tagify__dropdown__item {
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .tagify__dropdown__item:hover,
+    .tagify__dropdown__item--active {
+      background: #06b6d4;
+      color: white;
+    }
+  </style>
+</body>
+
+</html>

@@ -71,6 +71,24 @@ func SetupRoutes() *http.ServeMux{
 		}
 	})
 
+	mux.HandleFunc("/admin/journals", func(w http.ResponseWriter, r *http.Request) {
+		err := tmpl.ExecuteTemplate(w, "journals.html", map[string]interface{}{
+			"Title": "Manage Journals",
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	mux.HandleFunc("/admin/projects", func(w http.ResponseWriter, r *http.Request) {
+		err := tmpl.ExecuteTemplate(w, "projects.html", map[string]interface{}{
+			"Title": "Manage Projects",
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
 	mux.HandleFunc("/api/healthz", healthCheck)
 
 	mux.HandleFunc("GET /api/journals", apiCfg.getJournalEntries)
