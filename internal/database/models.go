@@ -57,4 +57,5 @@ type User struct {
 	UpdatedAt sql.NullTime
 	Name      string
 	Password  string
+	Bio       sql.NullString
 }

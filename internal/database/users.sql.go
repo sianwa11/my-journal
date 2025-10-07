@@ -7,12 +7,13 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, password)
 VALUES (?, ?)
-RETURNING id, created_at, updated_at, name, password
+RETURNING id, created_at, updated_at, name, password, bio
 `
 
 type CreateUserParams struct {
@@ -29,12 +30,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Name,
 		&i.Password,
+		&i.Bio,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, created_at, updated_at, name, password FROM users
+SELECT id, created_at, updated_at, name, password, bio FROM users
 WHERE name = ?
 `
 
@@ -47,12 +49,13 @@ func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
 		&i.UpdatedAt,
 		&i.Name,
 		&i.Password,
+		&i.Bio,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, created_at, updated_at, name, password FROM users
+SELECT id, created_at, updated_at, name, password, bio FROM users
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -70,6 +73,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.UpdatedAt,
 			&i.Name,
 			&i.Password,
+			&i.Bio,
 		); err != nil {
 			return nil, err
 		}
@@ -82,4 +86,20 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateBio = `-- name: UpdateBio :exec
+UPDATE users
+set bio = ?
+WHERE id = ?
+`
+
+type UpdateBioParams struct {
+	Bio sql.NullString
+	ID  int64
+}
+
+func (q *Queries) UpdateBio(ctx context.Context, arg UpdateBioParams) error {
+	_, err := q.db.ExecContext(ctx, updateBio, arg.Bio, arg.ID)
+	return err
 }

@@ -9,3 +9,8 @@ WHERE name = ?;
 
 -- name: ListUsers :many
 SELECT * FROM users;
+
+-- name: UpdateBio :exec
+UPDATE users
+set bio = ?
+WHERE id = ?;

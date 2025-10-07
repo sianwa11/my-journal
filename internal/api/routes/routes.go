@@ -108,6 +108,8 @@ func SetupRoutes() *http.ServeMux{
 
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 
+	mux.HandleFunc("POST /api/me", apiCfg.middlewareMustBeLoggedIn(apiCfg.editBio))
+
 	mux.HandleFunc("POST /api/login", apiCfg.handleLogin)
 	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefreshToken)
 	mux.HandleFunc("POST /api/revoke", apiCfg.handleRevokeToken)
