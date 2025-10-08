@@ -19,6 +19,9 @@ WHERE id = ?;
 SELECT * FROM journal_entries
 WHERE id = ? AND user_id = ?;
 
+-- name: GetAllJournalsCount :one
+SELECT COUNT(*) as count FROM journal_entries;
+
 -- name: GetJournalEntry :one
 SELECT * FROM journal_entries
 WHERE id = ?;

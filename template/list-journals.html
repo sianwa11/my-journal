@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journals - {{ .Title }}</title>
+  <link href="/static/css/output.css" rel="stylesheet">
+</head>
+
+<body class="bg-white min-h-screen flex flex-col">
+  <!-- Minimalist Navigation -->
+  {{ template "navigation" . }}
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl mx-auto px-6 py-12 w-full">
+    <!-- Page Header -->
+    <div class="text-center mb-16">
+      <h1 class="text-4xl font-light text-gray-900 mb-4">Journal</h1>
+      <p class="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+        A collection of thoughts, experiences, and reflections on my journey.
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-20">
+      <div class="text-gray-500">Loading journals...</div>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden text-center py-20">
+      <div class="max-w-md mx-auto">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Failed to Load Journals</h3>
+        <p class="text-gray-600 mb-6">There was an error loading the journal entries. Please try again.</p>
+        <button onclick="loadJournals()"
+          class="text-gray-900 hover:text-gray-600 transition-colors border-b border-gray-900 hover:border-gray-600">
+          Try Again
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-20">
+      <div class="max-w-md mx-auto">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No Journal Entries</h3>
+        <p class="text-gray-600">You haven't written any journal entries yet.</p>
+      </div>
+    </div>
+
+    <!-- Journals List -->
+    <div id="journalsList" class="hidden">
+      <!-- Journal Count -->
+      <div class="mb-8 text-center">
+        <span id="journalCount" class="text-sm text-gray-500">Loading...</span>
+      </div>
+
+      <!-- Journal entries will be inserted here -->
+      <div id="journalsContainer" class="space-y-1">
+        <!-- Journals will be populated here -->
+      </div>
+
+      <!-- Pagination -->
+      <div id="paginationContainer" class="hidden mt-16 text-center">
+        <div class="inline-flex items-center space-x-8">
+          <button id="prevButton"
+            class="text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500">
+            ← Previous
+          </button>
+
+          <div id="pageNumbers" class="flex items-center space-x-4">
+            <!-- Page numbers will be inserted here -->
+          </div>
+
+          <button id="nextButton"
+            class="text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500">
+            Next →
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Minimalist Footer -->
+  {{ template "footer" . }}
+
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    const journalsPerPage = 20; // More entries per page since they're minimal
+
+    // Load journals on page load
+    window.addEventListener('DOMContentLoaded', function () {
+      loadJournals();
+    });
+
+    async function loadJournals(page = 1) {
+      try {
+        showLoadingState();
+
+        const offset = (page - 1) * journalsPerPage;
+        const response = await fetch(`/api/journals?offset=${offset}&limit=${journalsPerPage}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.journals && data.journals.length > 0) {
+          displayJournals(data.journals);
+          updateJournalCount(data.total);
+
+          totalPages = Math.ceil(data.total / journalsPerPage);
+          updatePagination(data.total, page, data.has_more);
+        } else {
+          showEmptyState();
+        }
+
+      } catch (error) {
+        console.error('Error loading journals:', error);
+        showErrorState();
+      }
+    }
+
+    function displayJournals(journals) {
+      const container = document.getElementById('journalsContainer');
+      container.innerHTML = '';
+
+      journals.forEach(journal => {
+        const journalRow = createJournalRow(journal);
+        container.appendChild(journalRow);
+      });
+
+      // Show the list and hide other states
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('journalsList').classList.remove('hidden');
+    }
+
+    function createJournalRow(journal) {
+      const row = document.createElement('div');
+      row.className = 'group py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer';
+
+      // Format date
+      const createdDate = new Date(journal.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      row.innerHTML = `
+        <div class="flex items-center justify-between px-4">
+          <div class="flex-1 min-w-0">
+            <h3 class="text-lg font-light text-gray-900 group-hover:text-gray-600 transition-colors truncate">
+              ${journal.title}
+            </h3>
+          </div>
+          
+          <div class="flex items-center space-x-6 text-sm text-gray-500">
+            <span>${createdDate}</span>
+            <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+      `;
+
+      // Add click event to navigate to journal
+      row.addEventListener('click', () => {
+        window.location.href = `/journals/${journal.journal_id}`;
+      });
+
+      return row;
+    }
+
+    function updatePagination(total, current, hasMore) {
+      currentPage = current;
+      totalPages = Math.ceil(total / journalsPerPage);
+
+      const paginationContainer = document.getElementById('paginationContainer');
+      if (totalPages <= 1) {
+        paginationContainer.classList.add('hidden');
+        return;
+      }
+
+      paginationContainer.classList.remove('hidden');
+
+      // Update prev/next buttons
+      document.getElementById('prevButton').disabled = currentPage <= 1;
+      document.getElementById('nextButton').disabled = !hasMore;
+
+      // Update page numbers - minimal style
+      const pageNumbers = document.getElementById('pageNumbers');
+      pageNumbers.innerHTML = '';
+
+      // Show current page and total
+      const pageInfo = document.createElement('span');
+      pageInfo.className = 'text-sm text-gray-500';
+      pageInfo.textContent = `${currentPage} of ${totalPages}`;
+      pageNumbers.appendChild(pageInfo);
+    }
+
+    function updateJournalCount(total) {
+      document.getElementById('journalCount').textContent = `${total} ${total === 1 ? 'entry' : 'entries'}`;
+    }
+
+    function showLoadingState() {
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('journalsList').classList.add('hidden');
+    }
+
+    function showErrorState() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.remove('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('journalsList').classList.add('hidden');
+    }
+
+    function showEmptyState() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('emptyState').classList.remove('hidden');
+      document.getElementById('journalsList').classList.add('hidden');
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    // Pagination event listeners
+    document.getElementById('prevButton').addEventListener('click', () => {
+      if (currentPage > 1) {
+        loadJournals(currentPage - 1);
+      }
+    });
+
+    document.getElementById('nextButton').addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        loadJournals(currentPage + 1);
+      }
+    });
+  </script>
+</body>
+
+</html>

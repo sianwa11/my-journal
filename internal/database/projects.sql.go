@@ -160,6 +160,17 @@ func (q *Queries) GetProjects(ctx context.Context, arg GetProjectsParams) ([]Pro
 	return items, nil
 }
 
+const getProjectsCount = `-- name: GetProjectsCount :one
+SELECT COUNT(*) as count FROM projects
+`
+
+func (q *Queries) GetProjectsCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getProjectsCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const updateProject = `-- name: UpdateProject :exec
 UPDATE projects
 set title = ?,

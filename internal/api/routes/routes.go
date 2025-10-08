@@ -1,12 +1,14 @@
 package routes
 
 import (
+	"context"
 	"database/sql"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
@@ -29,7 +31,7 @@ func SetupRoutes() *http.ServeMux{
 	
 	secret := os.Getenv("SECRET")
 	dbUrl := os.Getenv("DB_URL")
-	const rootPath = "."
+	// const rootPath = "."
 
 	db, err := sql.Open("sqlite3", dbUrl)
 	if err != nil {
@@ -57,6 +59,26 @@ func SetupRoutes() *http.ServeMux{
 
 	// Parse templates
 	tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("template/*.html"))
+	tmpl = template.Must(tmpl.ParseGlob("template/partials/*.html"))
+
+
+	getUserTemplateData := func() (map[string]interface{}, error) {
+		user, err := apiCfg.DB.ListUser(context.Background())
+		if err != nil || len(user) == 0 {
+			return map[string]interface{}{
+				"Name" : "Your Name",
+				"Year" : time.Now().Year(),
+			}, nil
+		}
+
+		return map[string]interface{}{
+			"Name" : user[0].Name,
+			"Email": user[0].Email.String,
+			"Github": user[0].Github.String,
+			"Linkedin": user[0].Linkedin.String,
+			"Year" : time.Now().Year(),
+		}, nil
+	}
 
 	// Dashboard route using template
 	mux.HandleFunc("/admin/dashboard", func(w http.ResponseWriter, r *http.Request) {
@@ -140,6 +162,32 @@ func SetupRoutes() *http.ServeMux{
 			"Linkedin": user[0].Linkedin.String,
 			"Email": user[0].Email.String,
 		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	mux.HandleFunc("/projects", func(w http.ResponseWriter, r *http.Request) {
+		data, _ := getUserTemplateData()
+		data["Title"] = "Projects"
+		data["CurrentPage"] = "projects"
+		data["FooterText"] = "Built with passion ❤️."
+
+		err := tmpl.ExecuteTemplate(w, "list-projects.html", data)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	mux.HandleFunc("/journals", func(w http.ResponseWriter, r *http.Request) {
+		data, _ := getUserTemplateData()
+		data["Title"] = "Journals"
+		data["CurrentPage"] = "journals"
+		data["FooterText"] = "Built with passion ❤️."
+
+		err := tmpl.ExecuteTemplate(w, "list-journals.html", data)
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

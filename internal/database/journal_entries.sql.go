@@ -50,6 +50,17 @@ func (q *Queries) DeleteJournalEntry(ctx context.Context, arg DeleteJournalEntry
 	return err
 }
 
+const getAllJournalsCount = `-- name: GetAllJournalsCount :one
+SELECT COUNT(*) as count FROM journal_entries
+`
+
+func (q *Queries) GetAllJournalsCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getAllJournalsCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getJournalEntry = `-- name: GetJournalEntry :one
 SELECT id, title, content, created_at, updated_at, user_id FROM journal_entries
 WHERE id = ?

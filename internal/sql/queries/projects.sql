@@ -8,6 +8,9 @@ SELECT * FROM projects
 ORDER BY created_at DESC
 LIMIT ? OFFSET ?;
 
+-- name: GetProjectsCount :one
+SELECT COUNT(*) as count FROM projects;
+
 -- name: GetProject :one
 SELECT
   projects.id as project_id,
