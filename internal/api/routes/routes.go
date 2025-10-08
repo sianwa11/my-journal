@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
@@ -48,9 +49,14 @@ func SetupRoutes() *http.ServeMux{
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
 
-	// Parse templates
-	tmpl := template.Must(template.ParseGlob("template/*.html"))
+	funcMap := template.FuncMap{
+		"safeHTML": func(s string) template.HTML {
+			return template.HTML(s)
+		},
+	}
 
+	// Parse templates
+	tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("template/*.html"))
 
 	// Dashboard route using template
 	mux.HandleFunc("/admin/dashboard", func(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +95,56 @@ func SetupRoutes() *http.ServeMux{
 		}
 	})
 
+	mux.HandleFunc("/admin/profile", func(w http.ResponseWriter, r *http.Request) {
+		user, err := apiCfg.DB.ListUser(r.Context())
+		if err != nil {
+			http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
+			return 
+		}
+
+		err = tmpl.ExecuteTemplate(w, "profile.html", map[string]interface{}{
+			"Title": "My Profile",
+			"Name" : user[0].Name,
+			"Email": user[0].Email.String,
+			"Bio"  : user[0].Bio.String,
+			"Github": user[0].Github.String,
+			"Linkedin": user[0].Linkedin.String,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		user, err := apiCfg.DB.ListUser(r.Context())
+		if err != nil {
+			http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
+			return 
+		}
+
+		if len(user) == 0 {
+			http.Error(w, "No user data found", http.StatusInternalServerError)
+			return
+		}
+
+		bio := ""
+		if user[0].Bio.Valid {
+			bio = strings.TrimSpace(user[0].Bio.String)
+		}
+		
+		err = tmpl.ExecuteTemplate(w, "me.html", map[string]interface{}{
+			"Title": "Sianwa",
+			"Name" : user[0].Name,
+			"Bio"  : bio,
+			"Github": user[0].Github.String,
+			"Linkedin": user[0].Linkedin.String,
+			"Email": user[0].Email.String,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
 	mux.HandleFunc("/api/healthz", healthCheck)
 
 	mux.HandleFunc("GET /api/journals", apiCfg.getJournalEntries)
@@ -108,7 +164,7 @@ func SetupRoutes() *http.ServeMux{
 
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 
-	mux.HandleFunc("POST /api/me", apiCfg.middlewareMustBeLoggedIn(apiCfg.editBio))
+	mux.HandleFunc("PUT /api/me", apiCfg.middlewareMustBeLoggedIn(apiCfg.editUserInfo))
 
 	mux.HandleFunc("POST /api/login", apiCfg.handleLogin)
 	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefreshToken)

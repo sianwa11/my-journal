@@ -10,7 +10,15 @@ WHERE name = ?;
 -- name: ListUsers :many
 SELECT * FROM users;
 
--- name: UpdateBio :exec
+-- name: UpdateUserInfo :exec
 UPDATE users
-set bio = ?
+set bio = ?,
+name = ?,
+email = ?,
+github = ?,
+linkedin = ?
 WHERE id = ?;
+
+-- name: ListUser :many
+SELECT * FROM users ORDER BY id DESC
+LIMIT 1;

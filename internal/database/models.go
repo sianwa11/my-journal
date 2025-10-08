@@ -58,4 +58,7 @@ type User struct {
 	Name      string
 	Password  string
 	Bio       sql.NullString
+	Email     sql.NullString
+	Github    sql.NullString
+	Linkedin  sql.NullString
 }
