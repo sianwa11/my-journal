@@ -121,6 +121,30 @@ func (q *Queries) GetJournals(ctx context.Context, arg GetJournalsParams) ([]Jou
 	return items, nil
 }
 
+const getPrevAndNextJournalIDs = `-- name: GetPrevAndNextJournalIDs :one
+WITH ordered AS (
+  SELECT
+    id,
+    LAG(id) OVER (ORDER BY id) AS previous_id,
+    LEAD(id) OVER (ORDER BY id) AS next_id
+  FROM journal_entries
+)
+SELECT id, previous_id, next_id FROM ordered WHERE id = ?
+`
+
+type GetPrevAndNextJournalIDsRow struct {
+	ID         int64
+	PreviousID interface{}
+	NextID     interface{}
+}
+
+func (q *Queries) GetPrevAndNextJournalIDs(ctx context.Context, id int64) (GetPrevAndNextJournalIDsRow, error) {
+	row := q.db.QueryRowContext(ctx, getPrevAndNextJournalIDs, id)
+	var i GetPrevAndNextJournalIDsRow
+	err := row.Scan(&i.ID, &i.PreviousID, &i.NextID)
+	return i, err
+}
+
 const getUsersJournal = `-- name: GetUsersJournal :one
 SELECT id, title, content, created_at, updated_at, user_id FROM journal_entries
 WHERE id = ? AND user_id = ?

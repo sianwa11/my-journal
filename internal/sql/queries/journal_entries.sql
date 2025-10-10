@@ -26,6 +26,17 @@ SELECT COUNT(*) as count FROM journal_entries;
 SELECT * FROM journal_entries
 WHERE id = ?;
 
+-- name: GetPrevAndNextJournalIDs :one 
+WITH ordered AS (
+  SELECT
+    id,
+    LAG(id) OVER (ORDER BY id) AS previous_id,
+    LEAD(id) OVER (ORDER BY id) AS next_id
+  FROM journal_entries
+)
+SELECT * FROM ordered WHERE id = ?;
+
+
 -- name: DeleteJournalEntry :exec
 DELETE FROM journal_entries
 WHERE id = ? AND user_id = ?;

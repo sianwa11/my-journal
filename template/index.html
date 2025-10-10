@@ -217,12 +217,12 @@
         const journals = await response.json();
 
         if (response.ok && journals) {
-          document.getElementById('journal-count').textContent = journals.length || 0;
+          document.getElementById('journal-count').textContent = journals.total || 0;
 
           // Calculate recent entries (last 7 days)
           const oneWeekAgo = new Date();
           oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-          const recentCount = journals.filter(j => new Date(j.created_at) > oneWeekAgo).length;
+          const recentCount = journals.journals.filter(j => new Date(j.created_at) > oneWeekAgo).length;
           document.getElementById('journal-recent').textContent = recentCount;
         }
       } catch (error) {
@@ -238,8 +238,8 @@
         const projects = await response.json();
 
         if (response.ok && projects) {
-          document.getElementById('project-count').textContent = projects.length || 0;
-          document.getElementById('project-active').textContent = projects.length || 0;
+          document.getElementById('project-count').textContent = projects.total || 0;
+          document.getElementById('project-active').textContent = projects.total || 0;
         }
       } catch (error) {
         console.error('Error loading project stats:', error);

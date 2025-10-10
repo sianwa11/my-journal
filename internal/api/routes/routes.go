@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -187,6 +188,43 @@ func SetupRoutes() *http.ServeMux{
 		data["FooterText"] = "Built with passion ❤️."
 
 		err := tmpl.ExecuteTemplate(w, "list-journals.html", data)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	mux.HandleFunc("/journals/{ID}", func(w http.ResponseWriter, r *http.Request) {
+		data, _ := getUserTemplateData()
+		data["Title"] = "Journal Entry"
+		data["CurrentPage"] = "journals"
+		data["FooterText"] = "Built with passion ❤️."
+
+		IDStr := r.PathValue("ID")
+		journalID, err := strconv.Atoi(IDStr)
+
+		if err != nil {
+			http.Error(w, "Invalid journal ID", http.StatusBadRequest)
+			return
+		}
+
+		journal, err := apiCfg.DB.GetJournalEntry(r.Context(), int64(journalID))
+		if err != nil {
+			http.Error(w, "Journal entry not found", http.StatusNotFound)
+			return
+		}
+
+		nextAndPrev, err := apiCfg.DB.GetPrevAndNextJournalIDs(r.Context(), int64(journalID))
+		if err != nil {
+			http.Error(w, "Failed to fetch navigation data", http.StatusInternalServerError)
+			return 
+		}
+
+		data["Journal"] = journal
+		data["NextJournalID"] = nextAndPrev.NextID
+		data["PrevJournalID"] = nextAndPrev.PreviousID
+
+		err = tmpl.ExecuteTemplate(w, "view-journal.html", data)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
