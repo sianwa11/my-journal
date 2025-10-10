@@ -56,6 +56,7 @@ func SetupRoutes() *http.ServeMux{
 		"safeHTML": func(s string) template.HTML {
 			return template.HTML(s)
 		},
+		"split" : strings.Split,
 	}
 
 	// Parse templates
@@ -225,6 +226,42 @@ func SetupRoutes() *http.ServeMux{
 		data["PrevJournalID"] = nextAndPrev.PreviousID
 
 		err = tmpl.ExecuteTemplate(w, "view-journal.html", data)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	mux.HandleFunc("/projects/{ID}", func(w http.ResponseWriter, r *http.Request) {
+		data, _ := getUserTemplateData()
+		data["Title"] = "Project Details"
+		data["CurrentPage"] = "projects"
+		data["FooterText"] = "Built with passion ❤️."
+
+		IDStr := r.PathValue("ID")
+		projectID, err := strconv.Atoi(IDStr)
+
+		if err != nil {
+			http.Error(w, "Invalid project ID", http.StatusBadRequest)
+			return
+		}
+		
+		project, err := apiCfg.DB.GetProject(r.Context(), int64(projectID))
+		if err != nil {
+			http.Error(w, "Project not found", http.StatusNotFound)
+		}
+
+		ordered, err := apiCfg.DB.GetProjectsNextAndPrevious(r.Context(), int64(projectID))
+		if err != nil {
+			http.Error(w, "Failed to fetch navigation data", http.StatusInternalServerError)
+			return 
+		}
+
+		data["Project"] = project
+		data["NextProjectID"] = ordered.NextID
+		data["PrevProjectID"] = ordered.PreviousID
+
+		err = tmpl.ExecuteTemplate(w, "view-project.html", data)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

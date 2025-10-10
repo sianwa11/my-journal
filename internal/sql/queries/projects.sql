@@ -11,6 +11,16 @@ LIMIT ? OFFSET ?;
 -- name: GetProjectsCount :one
 SELECT COUNT(*) as count FROM projects;
 
+-- name: GetProjectsNextAndPrevious :one
+WITH ordered AS (
+  SELECT 
+    id,
+    LAG(id) OVER (ORDER BY id) AS previous_id,
+    LEAD(id) OVER (ORDER BY id) AS next_id
+  FROM projects
+)
+SELECT * FROM ordered WHERE id = ?;
+
 -- name: GetProject :one
 SELECT
   projects.id as project_id,

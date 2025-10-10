@@ -171,6 +171,30 @@ func (q *Queries) GetProjectsCount(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const getProjectsNextAndPrevious = `-- name: GetProjectsNextAndPrevious :one
+WITH ordered AS (
+  SELECT 
+    id,
+    LAG(id) OVER (ORDER BY id) AS previous_id,
+    LEAD(id) OVER (ORDER BY id) AS next_id
+  FROM projects
+)
+SELECT id, previous_id, next_id FROM ordered WHERE id = ?
+`
+
+type GetProjectsNextAndPreviousRow struct {
+	ID         int64
+	PreviousID interface{}
+	NextID     interface{}
+}
+
+func (q *Queries) GetProjectsNextAndPrevious(ctx context.Context, id int64) (GetProjectsNextAndPreviousRow, error) {
+	row := q.db.QueryRowContext(ctx, getProjectsNextAndPrevious, id)
+	var i GetProjectsNextAndPreviousRow
+	err := row.Scan(&i.ID, &i.PreviousID, &i.NextID)
+	return i, err
+}
+
 const updateProject = `-- name: UpdateProject :exec
 UPDATE projects
 set title = ?,
