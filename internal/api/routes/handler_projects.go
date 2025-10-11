@@ -41,6 +41,14 @@ type Params struct {
 	Tags 				[]Tags `json:"tags"`
 }
 
+type ProjectsResponse struct {
+	Projects []Project `json:"projects"`
+	Total    int       `json:"total"`
+	Page     int       `json:"page"`
+	Limit    int       `json:"limit"`
+	HasMore  bool      `json:"has_more"`
+}
+
 func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 	var params Params
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
@@ -269,6 +277,12 @@ func (cfg *apiConfig) getProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	totalCount, err := cfg.DB.GetProjectsCount(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to get projects count", err)
+		return
+	}
+
 	projects, err := cfg.DB.GetProjects(r.Context(), database.GetProjectsParams{
 		Limit: int64(limitInt),
 		Offset: int64(offsetInt),
@@ -278,6 +292,7 @@ func (cfg *apiConfig) getProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	
 	projectsArr := []Project{}
 	for _, project := range projects {
 		projectsArr = append(projectsArr, Project{
@@ -294,7 +309,17 @@ func (cfg *apiConfig) getProjects(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	respondWithJson(w, http.StatusOK, projectsArr)
+	// Calculate pagination info
+  currentPage := (offsetInt / limitInt) + 1
+  hasMore := offsetInt + len(projects) < int(totalCount)
+
+	respondWithJson(w, http.StatusOK, ProjectsResponse {
+		Projects: projectsArr,
+		Total: int(totalCount),
+		Page: currentPage,
+		Limit: limitInt,
+		HasMore: hasMore,
+	})
 }
 
 func (cfg *apiConfig) getProject(w http.ResponseWriter, r *http.Request) {

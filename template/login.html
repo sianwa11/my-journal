@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }}</title>
+  <link href="/static/css/output.css" rel="stylesheet">
+</head>
+
+<body class="min-h-screen bg-white">
+  <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <!-- Header -->
+      <div class="text-center">
+        <div class="mx-auto h-20 w-20 bg-gray-900 flex items-center justify-center mb-6">
+          <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+            </path>
+          </svg>
+        </div>
+        <h2 class="text-4xl font-light text-gray-900">
+          {{ .Title }}
+        </h2>
+        <p class="mt-3 text-gray-600 text-lg">
+          Sign in to access your journal
+        </p>
+      </div>
+
+      <!-- Login Form -->
+      <div class="bg-white border border-gray-200 p-8">
+        <form id="loginForm" class="space-y-6">
+          <!-- Error Message -->
+          <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-600 px-4 py-3">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"></path>
+              </svg>
+              <span id="errorText"></span>
+            </div>
+          </div>
+
+          <!-- Success Message -->
+          <div id="successMessage" class="hidden bg-green-50 border border-green-200 text-green-600 px-4 py-3">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"></path>
+              </svg>
+              <span>Login successful! Redirecting...</span>
+            </div>
+          </div>
+
+          <div class="space-y-5">
+            <!-- Name Field -->
+            <div class="relative">
+              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                Name
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                </div>
+                <input id="name" name="name" type="text" required
+                  class="block w-full pl-10 pr-3 py-3 border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="Enter your name">
+              </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="relative">
+              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                  </svg>
+                </div>
+                <input id="password" name="password" type="password" required
+                  class="block w-full pl-10 pr-12 py-3 border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="Enter your password">
+                <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <svg id="eyeOpen" class="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                    </path>
+                  </svg>
+                  <svg id="eyeClosed" class="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors hidden"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21">
+                    </path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div>
+            <button type="submit" id="submitButton"
+              class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200">
+              <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                <svg id="loginIcon" class="h-5 w-5 text-white group-hover:text-gray-200 transition-colors"
+                  fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2z"
+                    clip-rule="evenodd"></path>
+                </svg>
+                <svg id="loadingIcon" class="hidden h-5 w-5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+              </span>
+              <span id="buttonText">Sign in</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center">
+        <p class="text-sm text-gray-500">
+          Secure access to your personal journal
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        // Verify token is still valid
+        fetch('/api/journals', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(response => {
+          if (response.ok) {
+            window.location.href = '/admin/dashboard';
+          }
+        }).catch(() => {
+          // Token invalid, continue with login
+        });
+      }
+    });
+
+    // Toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function () {
+      const passwordField = document.getElementById('password');
+      const eyeOpen = document.getElementById('eyeOpen');
+      const eyeClosed = document.getElementById('eyeClosed');
+
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        eyeOpen.classList.add('hidden');
+        eyeClosed.classList.remove('hidden');
+      } else {
+        passwordField.type = 'password';
+        eyeOpen.classList.remove('hidden');
+        eyeClosed.classList.add('hidden');
+      }
+    });
+
+    // Form submission
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const password = document.getElementById('password').value;
+      const submitButton = document.getElementById('submitButton');
+      const buttonText = document.getElementById('buttonText');
+      const loginIcon = document.getElementById('loginIcon');
+      const loadingIcon = document.getElementById('loadingIcon');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const errorText = document.getElementById('errorText');
+
+      // Validation
+      if (!name || !password) {
+        showError('Please fill in all fields');
+        return;
+      }
+
+      // Hide previous messages
+      hideMessages();
+
+      // Show loading state
+      submitButton.disabled = true;
+      buttonText.textContent = 'Signing in...';
+      loginIcon.classList.add('hidden');
+      loadingIcon.classList.remove('hidden');
+      submitButton.classList.add('cursor-not-allowed', 'opacity-75');
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: name,
+            password: password
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Store tokens and user info
+          localStorage.setItem('accessToken', data.token);
+          localStorage.setItem('refreshToken', data.refresh_token);
+          localStorage.setItem('userId', data.id);
+          localStorage.setItem('userName', data.name);
+
+          // Show success message
+          showSuccess();
+
+          // Redirect after short delay
+          setTimeout(() => {
+            window.location.href = '/admin/dashboard';
+          }, 1500);
+
+        } else {
+          // Show API error message
+          const errorMsg = data.error || data.message || 'Login failed. Please check your credentials.';
+          showError(errorMsg);
+        }
+
+      } catch (error) {
+        console.error('Login error:', error);
+        showError('Network error. Please check your connection and try again.');
+      } finally {
+        // Reset button state
+        setTimeout(() => {
+          submitButton.disabled = false;
+          buttonText.textContent = 'Sign in';
+          loginIcon.classList.remove('hidden');
+          loadingIcon.classList.add('hidden');
+          submitButton.classList.remove('cursor-not-allowed', 'opacity-75');
+        }, 500);
+      }
+    });
+
+    function showError(message) {
+      const errorMessage = document.getElementById('errorMessage');
+      const errorText = document.getElementById('errorText');
+      errorText.textContent = message;
+      errorMessage.classList.remove('hidden');
+
+      // Add shake animation
+      errorMessage.classList.add('animate-pulse');
+      setTimeout(() => {
+        errorMessage.classList.remove('animate-pulse');
+      }, 1000);
+    }
+
+    function showSuccess() {
+      const successMessage = document.getElementById('successMessage');
+      successMessage.classList.remove('hidden');
+    }
+
+    function hideMessages() {
+      document.getElementById('errorMessage').classList.add('hidden');
+      document.getElementById('successMessage').classList.add('hidden');
+    }
+
+    // Auto-hide error messages after 5 seconds
+    setInterval(() => {
+      const errorMessage = document.getElementById('errorMessage');
+      if (!errorMessage.classList.contains('hidden')) {
+        setTimeout(() => {
+          errorMessage.classList.add('hidden');
+        }, 5000);
+      }
+    }, 100);
+  </script>
+</body>
+
+</html>

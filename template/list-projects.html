@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects - {{ .Title }}</title>
+  <link href="/static/css/output.css" rel="stylesheet">
+</head>
+
+<body class="bg-white min-h-screen flex flex-col">
+  <!-- Minimalist Navigation -->
+  {{ template "navigation" . }}
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl mx-auto px-6 py-12 w-full">
+    <!-- Page Header -->
+    <div class="text-center mb-16">
+      <h1 class="text-4xl font-light text-gray-900 mb-4">Projects</h1>
+      <p class="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+        Here are some of the projects I've worked on. Each one represents a journey of learning and growth.
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-20">
+      <div class="text-gray-500">Loading projects...</div>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden text-center py-20">
+      <div class="max-w-md mx-auto">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Failed to Load Projects</h3>
+        <p class="text-gray-600 mb-6">There was an error loading the projects. Please try again.</p>
+        <button onclick="loadProjects()"
+          class="text-gray-900 hover:text-gray-600 transition-colors border-b border-gray-900 hover:border-gray-600">
+          Try Again
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-20">
+      <div class="max-w-md mx-auto">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No Projects Yet</h3>
+        <p class="text-gray-600">There are no projects to display at the moment.</p>
+      </div>
+    </div>
+
+    <!-- Projects Content -->
+    <div id="projectsContent" class="hidden">
+      <!-- Project Count -->
+      <div class="mb-8 text-center">
+        <span id="projectCount" class="text-sm text-gray-500">Loading...</span>
+      </div>
+
+      <!-- Projects Grid -->
+      <div id="projectsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+        <!-- Projects will be inserted here dynamically -->
+      </div>
+
+      <!-- Pagination -->
+      <div id="paginationContainer" class="hidden mt-16 text-center">
+        <div class="inline-flex items-center space-x-8">
+          <button id="prevButton"
+            class="text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500">
+            ← Previous
+          </button>
+
+          <div id="pageNumbers" class="flex items-center space-x-4">
+            <!-- Page numbers will be inserted here -->
+          </div>
+
+          <button id="nextButton"
+            class="text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500">
+            Next →
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Minimalist Footer -->
+  {{ template "footer" . }}
+
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    const projectsPerPage = 9;
+
+    // Load projects on page load
+    window.addEventListener('DOMContentLoaded', function () {
+      loadProjects();
+    });
+
+    async function loadProjects(page = 1) {
+      try {
+        showLoadingState();
+
+        const offset = (page - 1) * projectsPerPage;
+        const response = await fetch(`/api/projects?offset=${offset}&limit=${projectsPerPage}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.projects && data.projects.length > 0) {
+          displayProjects(data.projects);
+          updateProjectCount(data.total);
+
+          totalPages = Math.ceil(data.total / projectsPerPage);
+          updatePagination(data.total, page, data.has_more);
+        } else {
+          showEmptyState();
+        }
+
+      } catch (error) {
+        console.error('Error loading projects:', error);
+        showErrorState();
+      }
+    }
+
+    function displayProjects(projects) {
+      const grid = document.getElementById('projectsGrid');
+      grid.innerHTML = '';
+
+      projects.forEach(project => {
+        const projectCard = createProjectCard(project);
+        grid.appendChild(projectCard);
+      });
+
+      // Show content and hide other states
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('projectsContent').classList.remove('hidden');
+    }
+
+    function createProjectCard(project) {
+      const card = document.createElement('div');
+      card.className = 'group cursor-pointer';
+
+      // Format date
+      const createdDate = new Date(project.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      // Truncate description
+      const maxDescLength = 150;
+      const truncatedDesc = project.description && project.description.length > maxDescLength
+        ? project.description.substring(0, maxDescLength) + '...'
+        : project.description || 'No description available';
+
+      // Handle tags
+      let tagsHtml = '';
+      if (project.tags && project.tags.trim()) {
+        const tagsArray = project.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+
+        if (tagsArray.length > 0) {
+          tagsHtml = tagsArray.slice(0, 4).map(tag =>
+            `<span class="text-xs text-gray-500 bg-gray-100 px-2 py-1">${tag}</span>`
+          ).join('');
+        }
+      }
+
+      card.innerHTML = `
+        <!-- Project Image/Icon -->
+        <div class="relative h-48 bg-gray-100 border border-gray-200 flex items-center justify-center mb-6 group-hover:bg-gray-50 transition-colors">
+          ${project.image_url ?
+          `<img src="${project.image_url}" alt="${project.title}" class="w-full h-full object-cover">` :
+          `<div class="text-gray-400 text-3xl font-light">${project.title.charAt(0).toUpperCase()}</div>`
+        }
+        </div>
+
+        <!-- Project Content -->
+        <div class="space-y-4">
+          <div class="flex items-start justify-between">
+            <h3 class="text-xl font-light text-gray-900 group-hover:text-gray-600 transition-colors">
+              ${project.title}
+            </h3>
+            <span class="text-xs text-gray-500 whitespace-nowrap ml-4">${createdDate}</span>
+          </div>
+
+          <p class="text-gray-600 text-sm leading-relaxed line-clamp-4">
+            ${truncatedDesc}
+          </p>
+
+          <!-- Tags -->
+          ${tagsHtml ? `
+            <div class="flex flex-wrap gap-2">
+              ${tagsHtml}
+            </div>
+          ` : ''}
+
+          <!-- Project Links -->
+          <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div class="flex space-x-4">
+              ${project.github ? `
+                <a href="${project.github}" 
+                   target="_blank" 
+                   class="text-gray-500 hover:text-gray-700 transition-colors text-sm"
+                   title="View Source"
+                   onclick="event.stopPropagation()">
+                  GitHub
+                </a>
+              ` : ''}
+              
+              ${project.link ? `
+                <a href="${project.link}" 
+                   target="_blank" 
+                   class="text-gray-500 hover:text-gray-700 transition-colors text-sm"
+                   title="View Demo"
+                   onclick="event.stopPropagation()">
+                  Live Demo
+                </a>
+              ` : ''}
+            </div>
+
+            <span class="text-gray-400 text-sm group-hover:text-gray-600 transition-colors">
+              <a href="/projects/${project.project_id}" onclick="event.stopPropagation()">
+                View Details →
+              </a>
+            </span>
+          </div>
+        </div>
+      `;
+
+      // Add click event to navigate to project
+      card.addEventListener('click', () => {
+        window.location.href = `/projects/${project.project_id}`;
+      });
+
+      return card;
+    }
+
+    function updatePagination(total, current, hasMore) {
+      currentPage = current;
+      totalPages = Math.ceil(total / projectsPerPage);
+
+      const paginationContainer = document.getElementById('paginationContainer');
+      if (totalPages <= 1) {
+        paginationContainer.classList.add('hidden');
+        return;
+      }
+
+      paginationContainer.classList.remove('hidden');
+
+      // Update prev/next buttons
+      document.getElementById('prevButton').disabled = currentPage <= 1;
+      document.getElementById('nextButton').disabled = !hasMore;
+
+      // Update page numbers - minimal style
+      const pageNumbers = document.getElementById('pageNumbers');
+      pageNumbers.innerHTML = '';
+
+      // Show current page and total
+      const pageInfo = document.createElement('span');
+      pageInfo.className = 'text-sm text-gray-500';
+      pageInfo.textContent = `${currentPage} of ${totalPages}`;
+      pageNumbers.appendChild(pageInfo);
+    }
+
+    function updateProjectCount(total) {
+      document.getElementById('projectCount').textContent = `${total} project${total !== 1 ? 's' : ''}`;
+    }
+
+    function showLoadingState() {
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('projectsContent').classList.add('hidden');
+    }
+
+    function showErrorState() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.remove('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('projectsContent').classList.add('hidden');
+    }
+
+    function showEmptyState() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.add('hidden');
+      document.getElementById('emptyState').classList.remove('hidden');
+      document.getElementById('projectsContent').classList.add('hidden');
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    // Pagination event listeners
+    document.getElementById('prevButton').addEventListener('click', () => {
+      if (currentPage > 1) {
+        loadProjects(currentPage - 1);
+      }
+    });
+
+    document.getElementById('nextButton').addEventListener('click', () => {
+      loadProjects(currentPage + 1);
+    });
+  </script>
+
+  <style>
+    .line-clamp-4 {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</body>
+
+</html>

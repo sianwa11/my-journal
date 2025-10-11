@@ -7,12 +7,13 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, password)
 VALUES (?, ?)
-RETURNING id, created_at, updated_at, name, password
+RETURNING id, created_at, updated_at, name, password, bio, email, github, linkedin
 `
 
 type CreateUserParams struct {
@@ -29,12 +30,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Name,
 		&i.Password,
+		&i.Bio,
+		&i.Email,
+		&i.Github,
+		&i.Linkedin,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, created_at, updated_at, name, password FROM users
+SELECT id, created_at, updated_at, name, password, bio, email, github, linkedin FROM users
 WHERE name = ?
 `
 
@@ -47,12 +52,54 @@ func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
 		&i.UpdatedAt,
 		&i.Name,
 		&i.Password,
+		&i.Bio,
+		&i.Email,
+		&i.Github,
+		&i.Linkedin,
 	)
 	return i, err
 }
 
+const listUser = `-- name: ListUser :many
+SELECT id, created_at, updated_at, name, password, bio, email, github, linkedin FROM users ORDER BY id DESC
+LIMIT 1
+`
+
+func (q *Queries) ListUser(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listUser)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.Password,
+			&i.Bio,
+			&i.Email,
+			&i.Github,
+			&i.Linkedin,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsers = `-- name: ListUsers :many
-SELECT id, created_at, updated_at, name, password FROM users
+SELECT id, created_at, updated_at, name, password, bio, email, github, linkedin FROM users
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -70,6 +117,10 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.UpdatedAt,
 			&i.Name,
 			&i.Password,
+			&i.Bio,
+			&i.Email,
+			&i.Github,
+			&i.Linkedin,
 		); err != nil {
 			return nil, err
 		}
@@ -82,4 +133,35 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUserInfo = `-- name: UpdateUserInfo :exec
+UPDATE users
+set bio = ?,
+name = ?,
+email = ?,
+github = ?,
+linkedin = ?
+WHERE id = ?
+`
+
+type UpdateUserInfoParams struct {
+	Bio      sql.NullString
+	Name     string
+	Email    sql.NullString
+	Github   sql.NullString
+	Linkedin sql.NullString
+	ID       int64
+}
+
+func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserInfo,
+		arg.Bio,
+		arg.Name,
+		arg.Email,
+		arg.Github,
+		arg.Linkedin,
+		arg.ID,
+	)
+	return err
 }

@@ -50,20 +50,25 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 }
 
 const searchTags = `-- name: SearchTags :many
-SELECT id, name, created_at FROM tags
+SELECT id, name as value FROM tags
 WHERE name LIKE ?
 `
 
-func (q *Queries) SearchTags(ctx context.Context, name string) ([]Tag, error) {
+type SearchTagsRow struct {
+	ID    int64
+	Value string
+}
+
+func (q *Queries) SearchTags(ctx context.Context, name string) ([]SearchTagsRow, error) {
 	rows, err := q.db.QueryContext(ctx, searchTags, name)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Tag
+	var items []SearchTagsRow
 	for rows.Next() {
-		var i Tag
-		if err := rows.Scan(&i.ID, &i.Name, &i.CreatedAt); err != nil {
+		var i SearchTagsRow
+		if err := rows.Scan(&i.ID, &i.Value); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

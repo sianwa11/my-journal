@@ -19,6 +19,14 @@ type Journal struct {
 	UserID    int    `json:"user_id"`
 }
 
+type JournalsResponse struct {
+	Journals []Journal `json:"journals"`
+	Total    int       `json:"total"`
+	Page     int       `json:"page"`
+	Limit    int       `json:"limit"`
+	HasMore  bool      `json:"has_more"`
+}
+
 func (cfg *apiConfig) getJournalEntries(w http.ResponseWriter, r *http.Request) {
 
 	limit := r.URL.Query().Get("limit")
@@ -40,6 +48,12 @@ func (cfg *apiConfig) getJournalEntries(w http.ResponseWriter, r *http.Request) 
 	offsetInt, err := strconv.Atoi(offset)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "invalid offset parameter", err)
+		return
+	}
+
+	totalCount, err := cfg.DB.GetAllJournalsCount(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to get journals count", err)
 		return
 	}
 
@@ -65,7 +79,17 @@ func (cfg *apiConfig) getJournalEntries(w http.ResponseWriter, r *http.Request) 
 		})
 	}
 
-	respondWithJson(w, http.StatusOK, journalEntries)
+		// Calculate pagination info
+  currentPage := (offsetInt / limitInt) + 1
+  hasMore := offsetInt + len(journals) < int(totalCount)
+
+	respondWithJson(w, http.StatusOK, JournalsResponse {
+		Journals: journalEntries,
+		Total: int(totalCount),
+		Page: currentPage,
+		Limit: limitInt,
+		HasMore: hasMore,
+	})
 }
 
 func (cfg *apiConfig) getJournalEntry(w http.ResponseWriter, r *http.Request) {

@@ -11,5 +11,5 @@ SELECT * FROM tags
 WHERE name = ?;
 
 -- name: SearchTags :many
-SELECT * FROM tags
+SELECT id, name as value FROM tags
 WHERE name LIKE ?;
