@@ -12,12 +12,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func MakeJWT(userId int, tokenSecret string, expiresIn time.Duration) (string, error){
+func MakeJWT(userId int, tokenSecret string, expiresIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer: "my-journal",
-		IssuedAt: jwt.NewNumericDate(time.Now()),
+		Issuer:    "my-journal",
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
-		Subject: strconv.Itoa(userId),
+		Subject:   strconv.Itoa(userId),
 	})
 
 	jwt, err := token.SignedString([]byte(tokenSecret))
@@ -25,10 +25,8 @@ func MakeJWT(userId int, tokenSecret string, expiresIn time.Duration) (string, e
 		return "", err
 	}
 
-
 	return jwt, nil
 }
-
 
 func ValidateJWT(tokenString, tokenSecret string) (int, error) {
 	var claims jwt.RegisteredClaims
@@ -64,7 +62,7 @@ func MakeRefreshToken() (string, error) {
 		return "", err
 	}
 
-	return hex.EncodeToString(key) , nil
+	return hex.EncodeToString(key), nil
 }
 
 func GetBearerToken(headers http.Header) (string, error) {

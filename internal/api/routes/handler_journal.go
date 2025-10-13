@@ -58,7 +58,7 @@ func (cfg *apiConfig) getJournalEntries(w http.ResponseWriter, r *http.Request) 
 	}
 
 	journals, err := cfg.DB.GetJournals(r.Context(), database.GetJournalsParams{
-		Limit: int64(limitInt),
+		Limit:  int64(limitInt),
 		Offset: int64(offsetInt),
 	})
 	if err != nil {
@@ -66,29 +66,28 @@ func (cfg *apiConfig) getJournalEntries(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-
 	journalEntries := []Journal{}
 	for _, journal := range journals {
 		journalEntries = append(journalEntries, Journal{
-			ID: int(journal.ID),
-			Title: journal.Title,
-			Content: journal.Content,
+			ID:        int(journal.ID),
+			Title:     journal.Title,
+			Content:   journal.Content,
 			CreatedAt: journal.CreatedAt.Time.String(),
 			UpdatedAt: journal.UpdatedAt.Time.String(),
-			UserID: int(journal.UserID),
+			UserID:    int(journal.UserID),
 		})
 	}
 
-		// Calculate pagination info
-  currentPage := (offsetInt / limitInt) + 1
-  hasMore := offsetInt + len(journals) < int(totalCount)
+	// Calculate pagination info
+	currentPage := (offsetInt / limitInt) + 1
+	hasMore := offsetInt+len(journals) < int(totalCount)
 
-	respondWithJson(w, http.StatusOK, JournalsResponse {
+	respondWithJson(w, http.StatusOK, JournalsResponse{
 		Journals: journalEntries,
-		Total: int(totalCount),
-		Page: currentPage,
-		Limit: limitInt,
-		HasMore: hasMore,
+		Total:    int(totalCount),
+		Page:     currentPage,
+		Limit:    limitInt,
+		HasMore:  hasMore,
 	})
 }
 
@@ -102,7 +101,7 @@ func (cfg *apiConfig) getJournalEntry(w http.ResponseWriter, r *http.Request) {
 
 	journalEntry, err := cfg.DB.GetJournalEntry(r.Context(), int64(journalID))
 	if err != nil {
-		if errors.Is(err,sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			respondWithError(w, http.StatusNotFound, "journal not found", nil)
 			return
 		}
@@ -111,12 +110,12 @@ func (cfg *apiConfig) getJournalEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusOK, Journal{
-		ID: int(journalEntry.ID),
-		Title: journalEntry.Title,
-		Content: journalEntry.Content,
+		ID:        int(journalEntry.ID),
+		Title:     journalEntry.Title,
+		Content:   journalEntry.Content,
 		CreatedAt: journalEntry.CreatedAt.Time.String(),
 		UpdatedAt: journalEntry.CreatedAt.Time.String(),
-		UserID: int(journalEntry.UserID),
+		UserID:    int(journalEntry.UserID),
 	})
 
 }
@@ -138,9 +137,9 @@ func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 	userId := int64(userIdInt)
 
 	journal, err := cfg.DB.CreateJournalEntry(r.Context(), database.CreateJournalEntryParams{
-		Title: req.Title,
+		Title:   req.Title,
 		Content: req.Content,
-		UserID: userId,
+		UserID:  userId,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to create journal entry", err)
@@ -152,10 +151,10 @@ func (cfg *apiConfig) postJournalEntry(w http.ResponseWriter, r *http.Request) {
 		CreatedAt string `json:"created_at"`
 		UserID    int    `json:"user_id"`
 	}{
-		 Title: journal.Title,
-		 Content: journal.Content,
-		 CreatedAt: journal.CreatedAt.Time.String(),
-		 UserID: int(journal.UserID),
+		Title:     journal.Title,
+		Content:   journal.Content,
+		CreatedAt: journal.CreatedAt.Time.String(),
+		UserID:    int(journal.UserID),
 	})
 
 }
@@ -175,14 +174,14 @@ func (cfg *apiConfig) editJournalEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if params.Title == "" || params.ID == 0 || params.Content == "" {
-		respondWithError(w, http.StatusBadRequest, "please fill in required fields",err)
+		respondWithError(w, http.StatusBadRequest, "please fill in required fields", err)
 		return
 	}
 
 	err = cfg.DB.UpdateJournalEntry(r.Context(), database.UpdateJournalEntryParams{
-		Title: params.Title,
+		Title:   params.Title,
 		Content: params.Content,
-		ID: int64(params.ID),
+		ID:      int64(params.ID),
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to update journal", err)
@@ -191,7 +190,7 @@ func (cfg *apiConfig) editJournalEntry(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJson(w, http.StatusOK, map[string]string{
 		"message": "journal updated successfully",
-	})	
+	})
 }
 
 func (cfg *apiConfig) deleteJournalEntry(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +204,7 @@ func (cfg *apiConfig) deleteJournalEntry(w http.ResponseWriter, r *http.Request)
 	userID := r.Context().Value(userIDKey).(int)
 
 	journal, err := cfg.DB.GetUsersJournal(r.Context(), database.GetUsersJournalParams{
-		ID: int64(journalID),
+		ID:     int64(journalID),
 		UserID: int64(userID),
 	})
 	if err != nil {
@@ -219,7 +218,7 @@ func (cfg *apiConfig) deleteJournalEntry(w http.ResponseWriter, r *http.Request)
 	}
 
 	err = cfg.DB.DeleteJournalEntry(r.Context(), database.DeleteJournalEntryParams{
-		ID: int64(journalID),
+		ID:     int64(journalID),
 		UserID: int64(userID),
 	})
 	if err != nil {

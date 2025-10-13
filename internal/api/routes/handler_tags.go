@@ -5,11 +5,11 @@ import (
 )
 
 type Tag struct {
-	ID   int    `json:"id"`
+	ID    int    `json:"id"`
 	Value string `json:"value"`
 }
 
-func(cfg *apiConfig) searchTags(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) searchTags(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 
 	if query == "" {
@@ -17,8 +17,8 @@ func(cfg *apiConfig) searchTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := cfg.DB.SearchTags(r.Context(), "%" + query + "%")
-	if err != nil  {
+	tags, err := cfg.DB.SearchTags(r.Context(), "%"+query+"%")
+	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to search tags", err)
 		return
 	}
@@ -26,7 +26,7 @@ func(cfg *apiConfig) searchTags(w http.ResponseWriter, r *http.Request) {
 	tagsArr := []Tag{}
 	for _, tag := range tags {
 		tagsArr = append(tagsArr, Tag{
-			ID:   int(tag.ID),
+			ID:    int(tag.ID),
 			Value: tag.Value,
 		})
 	}

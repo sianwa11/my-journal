@@ -36,8 +36,8 @@ func (cfg *apiConfig) editUserInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = cfg.DB.UpdateUserInfo(r.Context(), database.UpdateUserInfoParams{
-		Name: 	  params.Name,
-		Email: 	  sql.NullString{String: params.Email, Valid: params.Email != ""},
+		Name:     params.Name,
+		Email:    sql.NullString{String: params.Email, Valid: params.Email != ""},
 		Github:   sql.NullString{String: params.Github, Valid: params.Github != ""},
 		Linkedin: sql.NullString{String: params.Linkedin, Valid: params.Linkedin != ""},
 		Bio:      sql.NullString{String: params.Bio, Valid: params.Bio != ""},

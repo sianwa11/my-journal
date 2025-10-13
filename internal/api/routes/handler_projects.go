@@ -26,7 +26,7 @@ type Project struct {
 }
 
 type Tags struct {
-	ID   int `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -38,7 +38,7 @@ type Params struct {
 	Link        string `json:"link"`
 	Github      string `json:"github"`
 	Status      string `json:"status"`
-	Tags 				[]Tags `json:"tags"`
+	Tags        []Tags `json:"tags"`
 }
 
 type ProjectsResponse struct {
@@ -74,13 +74,13 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 	qtx := cgf.DB.WithTx(tx)
 
 	project, err := qtx.CreateProject(r.Context(), database.CreateProjectParams{
-		Title: params.Title,
+		Title:       params.Title,
 		Description: params.Description,
-		ImageUrl: sql.NullString{String: params.ImageUrl, Valid: params.ImageUrl != ""},
-		Link: sql.NullString{String: params.Link, Valid: params.Link != ""},
-		Github: sql.NullString{String: params.Github, Valid: params.Github != ""},
-		Status: sql.NullString{String: params.Status, Valid: params.Status != ""},
-		UserID: int64(userID),
+		ImageUrl:    sql.NullString{String: params.ImageUrl, Valid: params.ImageUrl != ""},
+		Link:        sql.NullString{String: params.Link, Valid: params.Link != ""},
+		Github:      sql.NullString{String: params.Github, Valid: params.Github != ""},
+		Status:      sql.NullString{String: params.Status, Valid: params.Status != ""},
+		UserID:      int64(userID),
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to create project", err)
@@ -88,16 +88,16 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, tag := range params.Tags {
-		if tag.ID == 0 && tag.Name ==  "" {
+		if tag.ID == 0 && tag.Name == "" {
 			respondWithError(w, http.StatusBadRequest, "invalid tag", err)
 			return
 		}
 
 		var tagID int64
-    // If tag has an ID, use it directly
-    if tag.ID != 0 {
+		// If tag has an ID, use it directly
+		if tag.ID != 0 {
 			tagID = int64(tag.ID)
-    } else {
+		} else {
 			// Try to find existing tag by name
 			existingTag, err := qtx.SelectTag(r.Context(), tag.Name)
 			if err != nil {
@@ -105,8 +105,8 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 					// Tag doesn't exist, create it
 					newTag, err := qtx.CreateTag(r.Context(), tag.Name)
 					if err != nil {
-							respondWithError(w, http.StatusInternalServerError, "failed to create tag", err)
-							return
+						respondWithError(w, http.StatusInternalServerError, "failed to create tag", err)
+						return
 					}
 					tagID = newTag.ID
 				} else {
@@ -118,12 +118,11 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 				// Tag exists, use its ID
 				tagID = existingTag.ID
 			}
-    }
-
+		}
 
 		_, err = qtx.CreateProjectTag(r.Context(), database.CreateProjectTagParams{
 			ProjectID: project.ID,
-			TagID: tagID,
+			TagID:     tagID,
 		})
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "failed to create project tag", err)
@@ -136,7 +135,7 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJson(w, http.StatusCreated, struct{
+	respondWithJson(w, http.StatusCreated, struct {
 		ID          int    `json:"id"`
 		Title       string `json:"title"`
 		Description string `json:"description"`
@@ -144,18 +143,18 @@ func (cgf *apiConfig) createProject(w http.ResponseWriter, r *http.Request) {
 		Link        string `json:"link"`
 		Github      string `json:"github"`
 		Status      string `json:"status"`
-		UserID			int    `json:"user_id"`
-		Tags 				[]Tags `json:"tags"`
+		UserID      int    `json:"user_id"`
+		Tags        []Tags `json:"tags"`
 	}{
-		ID: int(project.ID),
-		Title: project.Title,
+		ID:          int(project.ID),
+		Title:       project.Title,
 		Description: project.Description,
-		ImageUrl: project.ImageUrl.String,
-		Link: project.Link.String,
-		Github: project.Github.String,
-		Status: project.Status.String,
-		UserID: int(userID),
-		Tags: params.Tags,
+		ImageUrl:    project.ImageUrl.String,
+		Link:        project.Link.String,
+		Github:      project.Github.String,
+		Status:      project.Status.String,
+		UserID:      int(userID),
+		Tags:        params.Tags,
 	})
 }
 
@@ -182,25 +181,25 @@ func (cfg *apiConfig) updateProject(w http.ResponseWriter, r *http.Request) {
 	qtx := cfg.DB.WithTx(tx)
 
 	err = qtx.UpdateProject(r.Context(), database.UpdateProjectParams{
-		Title: params.Title,
+		Title:       params.Title,
 		Description: params.Description,
-		ImageUrl: sql.NullString{String: params.ImageUrl, Valid: params.ImageUrl != ""},
-		Link: sql.NullString{String: params.Link, Valid: params.Link != ""},
-		Github: sql.NullString{String: params.Github, Valid: params.Github != ""},
-		Status: sql.NullString{String: params.Status, Valid: params.Status != ""}, 
-		ID: int64(params.ProjectID),
+		ImageUrl:    sql.NullString{String: params.ImageUrl, Valid: params.ImageUrl != ""},
+		Link:        sql.NullString{String: params.Link, Valid: params.Link != ""},
+		Github:      sql.NullString{String: params.Github, Valid: params.Github != ""},
+		Status:      sql.NullString{String: params.Status, Valid: params.Status != ""},
+		ID:          int64(params.ProjectID),
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to update project", err)
 		return
 	}
-	
+
 	if len(params.Tags) > 0 {
 		err = qtx.DeleteProjectTag(r.Context(), int64(params.ProjectID))
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "failed to delete project tags", err)
 			return
-		}	
+		}
 
 		for _, tag := range params.Tags {
 			if tag.ID == 0 && tag.Name == "" {
@@ -211,7 +210,7 @@ func (cfg *apiConfig) updateProject(w http.ResponseWriter, r *http.Request) {
 			var tagID int64
 			if tag.ID != 0 {
 				tagID = int64(tag.ID)
-			}else {
+			} else {
 				existingTag, err := qtx.SelectTag(r.Context(), tag.Name)
 				if err != nil {
 					if errors.Is(err, sql.ErrNoRows) {
@@ -221,18 +220,18 @@ func (cfg *apiConfig) updateProject(w http.ResponseWriter, r *http.Request) {
 							return
 						}
 						tagID = newTag.ID
-					}else {
+					} else {
 						respondWithError(w, http.StatusInternalServerError, "something went wrong getting tags", err)
 						return
 					}
-				}else {
+				} else {
 					tagID = existingTag.ID
 				}
 			}
 
 			err = qtx.CreateProjectTagIfNotExists(r.Context(), database.CreateProjectTagIfNotExistsParams{
 				ProjectID: int64(params.ProjectID),
-				TagID: tagID,
+				TagID:     tagID,
 			})
 			if err != nil {
 				respondWithError(w, http.StatusInternalServerError, "failed to create project tag", err)
@@ -246,7 +245,6 @@ func (cfg *apiConfig) updateProject(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "failed to commit transaction", err)
 		return
 	}
-
 
 	respondWithJson(w, http.StatusOK, map[string]string{
 		"message": "successfully updated",
@@ -284,7 +282,7 @@ func (cfg *apiConfig) getProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	projects, err := cfg.DB.GetProjects(r.Context(), database.GetProjectsParams{
-		Limit: int64(limitInt),
+		Limit:  int64(limitInt),
 		Offset: int64(offsetInt),
 	})
 	if err != nil {
@@ -292,33 +290,32 @@ func (cfg *apiConfig) getProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	projectsArr := []Project{}
 	for _, project := range projects {
 		projectsArr = append(projectsArr, Project{
-			ProjectID: int(project.ID),
-			Title: project.Title,
+			ProjectID:   int(project.ID),
+			Title:       project.Title,
 			Description: project.Description,
-			ImageURL: project.ImageUrl.String,
-			Link: project.Link.String,
-			Github: project.Github.String,
-			Status: project.Status.String,
-			CreatedAt: project.CreatedAt.Time,
-			UpdatedAt: project.UpdatedAt.Time,
-			UserID: int(project.UserID),
+			ImageURL:    project.ImageUrl.String,
+			Link:        project.Link.String,
+			Github:      project.Github.String,
+			Status:      project.Status.String,
+			CreatedAt:   project.CreatedAt.Time,
+			UpdatedAt:   project.UpdatedAt.Time,
+			UserID:      int(project.UserID),
 		})
 	}
 
 	// Calculate pagination info
-  currentPage := (offsetInt / limitInt) + 1
-  hasMore := offsetInt + len(projects) < int(totalCount)
+	currentPage := (offsetInt / limitInt) + 1
+	hasMore := offsetInt+len(projects) < int(totalCount)
 
-	respondWithJson(w, http.StatusOK, ProjectsResponse {
+	respondWithJson(w, http.StatusOK, ProjectsResponse{
 		Projects: projectsArr,
-		Total: int(totalCount),
-		Page: currentPage,
-		Limit: limitInt,
-		HasMore: hasMore,
+		Total:    int(totalCount),
+		Page:     currentPage,
+		Limit:    limitInt,
+		HasMore:  hasMore,
 	})
 }
 
@@ -346,16 +343,16 @@ func (cfg *apiConfig) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusOK, Project{
-		ProjectID: int(project.ProjectID),
-		Title: project.Title,
+		ProjectID:   int(project.ProjectID),
+		Title:       project.Title,
 		Description: project.Description,
-		ImageURL: project.ImageUrl.String,
-		Link: project.Link.String,
-		Github: project.Github.String,
-		Status: project.Status.String,
-		CreatedAt: project.CreatedAt.Time,
-		UserID: int(project.UserID),
-		Tags: project.Tags,
+		ImageURL:    project.ImageUrl.String,
+		Link:        project.Link.String,
+		Github:      project.Github.String,
+		Status:      project.Status.String,
+		CreatedAt:   project.CreatedAt.Time,
+		UserID:      int(project.UserID),
+		Tags:        project.Tags,
 	})
 }
 

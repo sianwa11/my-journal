@@ -38,14 +38,13 @@ func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	password, err := auth.HashPassword(params.Password)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to hash password", err)
 		return
 	}
 	user, err := cfg.DB.CreateUser(r.Context(), database.CreateUserParams{
-		Name: params.Name,
+		Name:     params.Name,
 		Password: password,
 	})
 	if err != nil {
@@ -57,11 +56,8 @@ func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		Name      string `json:"name"`
 		CreatedAt string `json:"created_at"`
 	}{
-		Name: user.Name,
+		Name:      user.Name,
 		CreatedAt: user.CreatedAt.Time.String(),
 	})
 
 }
-
-
-
