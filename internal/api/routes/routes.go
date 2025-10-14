@@ -154,13 +154,16 @@ func SetupRoutes() *http.ServeMux {
 		}
 
 		err = tmpl.ExecuteTemplate(w, "me.html", map[string]interface{}{
-			"Title":    "Sianwa",
-			"Name":     user[0].Name,
-			"Bio":      bio,
-			"Github":   user[0].Github.String,
-			"Linkedin": user[0].Linkedin.String,
-			"Email":    user[0].Email.String,
+			"Title":       "Sianwa",
+			"Name":        user[0].Name,
+			"Bio":         bio,
+			"Github":      user[0].Github.String,
+			"Linkedin":    user[0].Linkedin.String,
+			"Email":       user[0].Email.String,
+			"CurrentPage": "about",
+			"FooterText":  "Built with passion ❤️.",
 		})
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
