@@ -15,3 +15,5 @@ func main() {
 	log.Printf("Serving on: http://localhost:%s/api/\n", port)
 	http.ListenAndServe(":"+port, routes)
 }
+
+func unsused() {}
