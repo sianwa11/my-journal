@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// #nosec G101 - False positive: This is a SQL query template, not hardcoded credentials
 const createRefreshToken = `-- name: CreateRefreshToken :one
 INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES (?, ?, ?)
 RETURNING id, token, user_id, expires_at, created_at, revoked_at
@@ -35,6 +36,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	return i, err
 }
 
+// #nosec G101 - False positive: This is a SQL query template, not hardcoded credentials
 const getByRefreshToken = `-- name: GetByRefreshToken :one
 SELECT user_id
 FROM refresh_tokens
@@ -48,6 +50,7 @@ func (q *Queries) GetByRefreshToken(ctx context.Context, token string) (int64, e
 	return user_id, err
 }
 
+// #nosec G101 - False positive: This is a SQL query template, not hardcoded credentials
 const revokeToken = `-- name: RevokeToken :exec
 UPDATE refresh_tokens
 set revoked_at = NOW(),

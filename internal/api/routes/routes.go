@@ -13,6 +13,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/sianwa11/my-journal/internal/database"
 )
 
@@ -52,7 +53,13 @@ func SetupRoutes() *http.ServeMux {
 
 	funcMap := template.FuncMap{
 		"safeHTML": func(s string) template.HTML {
-			return template.HTML(s)
+			p := bluemonday.UGCPolicy()
+
+			sanitized := p.Sanitize(s)
+
+			// Safe to convert to template.HTML after sanitization
+			// #nosec G203 - XSS prevention: content sanitized with bluemonday UGC policy before HTML conversion
+			return template.HTML(sanitized)
 		},
 		"split": strings.Split,
 	}
