@@ -16,4 +16,3 @@ func main() {
 	http.ListenAndServe(":"+port, routes)
 }
 
-func unsused() {}
