@@ -2,21 +2,21 @@ name: cd
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  Deploy:
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Check out code
         uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.1'
+          go-version: "1.25.1"
 
       - name: Build app
         run: ./scripts/buildprod.sh
@@ -32,11 +32,5 @@ jobs:
       - name: Use gcloud CLI
         run: gcloud info
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev
-
-      - name: Build Docker image
-        run: docker build -t us-central1-docker.pkg.dev/my-journal-475312/my-journal-ar-repo/my-journal:latest .
-
-      - name: Push Docker image
-        run: docker push us-central1-docker.pkg.dev/my-journal-475312/my-journal-ar-repo/my-journal:latest
+      - name: Build and push Docker image
+        run: gcloud builds submit --tag us-central1-docker.pkg.dev/my-journal-475314/my-journal-ar-repo/101909/my-journal:latest
