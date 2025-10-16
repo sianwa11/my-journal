@@ -32,5 +32,11 @@ jobs:
       - name: Use gcloud CLI
         run: gcloud info
 
-      - name: Build and push Docker image
-        run: gcloud builds submit --tag us-central1-docker.pkg.dev/my-journal-475312/my-journal-ar-repo/my-journal:latest .
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Build Docker image
+        run: docker build -t us-central1-docker.pkg.dev/my-journal-475312/my-journal-ar-repo/my-journal:latest .
+
+      - name: Push Docker image
+        run: docker push us-central1-docker.pkg.dev/my-journal-475312/my-journal-ar-repo/my-journal:latest
