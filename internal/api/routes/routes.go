@@ -13,23 +13,23 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/sianwa11/my-journal/internal/database"
 )
 
-type apiConfig struct{
-	dbConn        *sql.DB
+type apiConfig struct {
+	dbConn    *sql.DB
 	DB        *database.Queries
 	jwtSecret string
 }
 
-
-func SetupRoutes() *http.ServeMux{
+func SetupRoutes() *http.ServeMux {
 
 	err := godotenv.Load()
 	if err != nil {
 		log.Printf("Warning: Error loading .env file: %v", err)
 	}
-	
+
 	secret := os.Getenv("SECRET")
 	dbUrl := os.Getenv("DB_URL")
 	// const rootPath = "."
@@ -39,13 +39,12 @@ func SetupRoutes() *http.ServeMux{
 		panic("Failed to open database " + err.Error())
 	}
 
-	
 	apiCfg := &apiConfig{
 		jwtSecret: secret,
 	}
 	apiCfg.DB = database.New(db)
 	apiCfg.dbConn = db
-	
+
 	mux := http.NewServeMux()
 
 	// Serves static files from the "static" directory
@@ -54,31 +53,36 @@ func SetupRoutes() *http.ServeMux{
 
 	funcMap := template.FuncMap{
 		"safeHTML": func(s string) template.HTML {
-			return template.HTML(s)
+			p := bluemonday.UGCPolicy()
+
+			sanitized := p.Sanitize(s)
+
+			// Safe to convert to template.HTML after sanitization
+			// #nosec G203 - XSS prevention: content sanitized with bluemonday UGC policy before HTML conversion
+			return template.HTML(sanitized)
 		},
-		"split" : strings.Split,
+		"split": strings.Split,
 	}
 
 	// Parse templates
 	tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("template/*.html"))
 	tmpl = template.Must(tmpl.ParseGlob("template/partials/*.html"))
 
-
 	getUserTemplateData := func() (map[string]interface{}, error) {
 		user, err := apiCfg.DB.ListUser(context.Background())
 		if err != nil || len(user) == 0 {
 			return map[string]interface{}{
-				"Name" : "Your Name",
-				"Year" : time.Now().Year(),
+				"Name": "Your Name",
+				"Year": time.Now().Year(),
 			}, nil
 		}
 
 		return map[string]interface{}{
-			"Name" : user[0].Name,
-			"Email": user[0].Email.String,
-			"Github": user[0].Github.String,
+			"Name":     user[0].Name,
+			"Email":    user[0].Email.String,
+			"Github":   user[0].Github.String,
 			"Linkedin": user[0].Linkedin.String,
-			"Year" : time.Now().Year(),
+			"Year":     time.Now().Year(),
 		}, nil
 	}
 
@@ -123,15 +127,15 @@ func SetupRoutes() *http.ServeMux{
 		user, err := apiCfg.DB.ListUser(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
-			return 
+			return
 		}
 
 		err = tmpl.ExecuteTemplate(w, "profile.html", map[string]interface{}{
-			"Title": "My Profile",
-			"Name" : user[0].Name,
-			"Email": user[0].Email.String,
-			"Bio"  : user[0].Bio.String,
-			"Github": user[0].Github.String,
+			"Title":    "My Profile",
+			"Name":     user[0].Name,
+			"Email":    user[0].Email.String,
+			"Bio":      user[0].Bio.String,
+			"Github":   user[0].Github.String,
 			"Linkedin": user[0].Linkedin.String,
 		})
 		if err != nil {
@@ -143,7 +147,7 @@ func SetupRoutes() *http.ServeMux{
 		user, err := apiCfg.DB.ListUser(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
-			return 
+			return
 		}
 
 		if len(user) == 0 {
@@ -155,15 +159,18 @@ func SetupRoutes() *http.ServeMux{
 		if user[0].Bio.Valid {
 			bio = strings.TrimSpace(user[0].Bio.String)
 		}
-		
+
 		err = tmpl.ExecuteTemplate(w, "me.html", map[string]interface{}{
-			"Title": "Sianwa",
-			"Name" : user[0].Name,
-			"Bio"  : bio,
-			"Github": user[0].Github.String,
-			"Linkedin": user[0].Linkedin.String,
-			"Email": user[0].Email.String,
+			"Title":       "Sianwa",
+			"Name":        user[0].Name,
+			"Bio":         bio,
+			"Github":      user[0].Github.String,
+			"Linkedin":    user[0].Linkedin.String,
+			"Email":       user[0].Email.String,
+			"CurrentPage": "about",
+			"FooterText":  "Built with passion ❤️.",
 		})
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -218,7 +225,7 @@ func SetupRoutes() *http.ServeMux{
 		nextAndPrev, err := apiCfg.DB.GetPrevAndNextJournalIDs(r.Context(), int64(journalID))
 		if err != nil {
 			http.Error(w, "Failed to fetch navigation data", http.StatusInternalServerError)
-			return 
+			return
 		}
 
 		data["Journal"] = journal
@@ -245,7 +252,7 @@ func SetupRoutes() *http.ServeMux{
 			http.Error(w, "Invalid project ID", http.StatusBadRequest)
 			return
 		}
-		
+
 		project, err := apiCfg.DB.GetProject(r.Context(), int64(projectID))
 		if err != nil {
 			http.Error(w, "Project not found", http.StatusNotFound)
@@ -254,7 +261,7 @@ func SetupRoutes() *http.ServeMux{
 		ordered, err := apiCfg.DB.GetProjectsNextAndPrevious(r.Context(), int64(projectID))
 		if err != nil {
 			http.Error(w, "Failed to fetch navigation data", http.StatusInternalServerError)
-			return 
+			return
 		}
 
 		data["Project"] = project
@@ -282,7 +289,6 @@ func SetupRoutes() *http.ServeMux{
 	mux.HandleFunc("DELETE /api/projects/{projectID}", apiCfg.middlewareMustBeLoggedIn(apiCfg.deleteProject))
 	mux.HandleFunc("PUT /api/projects", apiCfg.middlewareMustBeLoggedIn(apiCfg.updateProject))
 
-
 	mux.HandleFunc("GET /api/tags", apiCfg.searchTags)
 
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
@@ -292,7 +298,6 @@ func SetupRoutes() *http.ServeMux{
 	mux.HandleFunc("POST /api/login", apiCfg.handleLogin)
 	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefreshToken)
 	mux.HandleFunc("POST /api/revoke", apiCfg.handleRevokeToken)
-
 
 	return mux
 }

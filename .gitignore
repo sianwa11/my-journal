@@ -10,3 +10,5 @@ dist/
 .DS_Store
 *.log
 *.sqlite3
+
+my-journal

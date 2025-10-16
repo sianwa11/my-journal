@@ -20,17 +20,16 @@ func (cfg *apiConfig) middlewareMustBeLoggedIn(next http.HandlerFunc) http.Handl
 		token, err := auth.GetBearerToken(r.Header)
 		if err != nil {
 			respondWithError(w, http.StatusUnauthorized, "missing or invalid authorization header", err)
-			return 
+			return
 		}
 
 		userId, err := auth.ValidateJWT(token, cfg.jwtSecret)
 		if err != nil {
 			respondWithError(w, http.StatusUnauthorized, "invalid or expired token", err)
-			return 
+			return
 		}
 
 		ctx := context.WithValue(r.Context(), userIDKey, userId)
-
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -66,9 +65,7 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-
-	jwt, err := auth.MakeJWT(int(user.ID), cfg.jwtSecret, 1 * time.Hour)
+	jwt, err := auth.MakeJWT(int(user.ID), cfg.jwtSecret, 1*time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to create jwt", err)
 		return
@@ -81,8 +78,8 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refreshTokenDB, err := cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
-		Token: refreshToken,
-		UserID: int64(user.ID),
+		Token:     refreshToken,
+		UserID:    int64(user.ID),
 		ExpiresAt: time.Now().AddDate(0, 0, 60),
 	})
 	if err != nil {
@@ -91,16 +88,16 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusOK, struct {
-		ID           int `json:"id"`
-		Name         string `json:"name"`
+		ID           int       `json:"id"`
+		Name         string    `json:"name"`
 		CreatedAt    time.Time `json:"created_at"`
-		Token        string `json:"token"`
-		RefreshToken string `json:"refresh_token"`
+		Token        string    `json:"token"`
+		RefreshToken string    `json:"refresh_token"`
 	}{
-		ID: int(user.ID),
-		Name: user.Name,
-		CreatedAt: user.CreatedAt.Time,
-		Token: jwt,
+		ID:           int(user.ID),
+		Name:         user.Name,
+		CreatedAt:    user.CreatedAt.Time,
+		Token:        jwt,
 		RefreshToken: refreshTokenDB.Token,
 	})
 }
@@ -118,13 +115,13 @@ func (cfg *apiConfig) handleRefreshToken(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	accessToken, err := auth.MakeJWT(int(userId), cfg.jwtSecret,1 * time.Hour)
+	accessToken, err := auth.MakeJWT(int(userId), cfg.jwtSecret, 1*time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to create jwt", err)
 		return
 	}
 
-	respondWithJson(w, http.StatusOK, struct{
+	respondWithJson(w, http.StatusOK, struct {
 		Token string `json:"token"`
 	}{
 		Token: accessToken,
