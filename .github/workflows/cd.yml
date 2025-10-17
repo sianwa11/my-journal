@@ -18,6 +18,15 @@ jobs:
         with:
           go-version: "1.25.1"
 
+      - name: Set up Node.js for Tailwind
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+      
+
       - name: Build app
         run: ./scripts/buildprod.sh
 
@@ -27,10 +36,10 @@ jobs:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Use gcloud CLI
-        run: gcloud info
+        uses: google-github-actions/setup-gcloud@v1
 
       - name: Build and push Docker image
         run: gcloud builds submit --tag us-central1-docker.pkg.dev/my-journal-475314/my-journal-ar-repo/101909/my-journal:latest
+
+      - name: Deploy to Cloud Run
+        run: gcloud run deploy my-journal --image us-central1-docker.pkg.dev/my-journal-475314/my-journal-ar-repo/101909/my-journal:latest --region us-central1 --allow-unauthenticated --project my-journal-475314 --max-instances=4
