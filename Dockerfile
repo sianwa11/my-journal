@@ -13,6 +13,7 @@ WORKDIR /app
 # Copy binary and templates
 ADD my-journal /usr/bin/my-journal
 COPY template ./template
+COPY static ./static
 
 # Create data directory for database
 RUN mkdir -p /app/data
