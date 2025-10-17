@@ -15,6 +15,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sianwa11/my-journal/internal/database"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type apiConfig struct {
@@ -34,7 +35,7 @@ func SetupRoutes() *http.ServeMux {
 	dbUrl := os.Getenv("DB_URL")
 	// const rootPath = "."
 
-	db, err := sql.Open("sqlite3", dbUrl)
+	db, err := sql.Open("libsql", dbUrl)
 	if err != nil {
 		panic("Failed to open database " + err.Error())
 	}
