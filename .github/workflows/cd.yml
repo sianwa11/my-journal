@@ -9,6 +9,9 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
 
+    env:
+      DB_URL: ${{ secrets.DB_URL }}
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -17,6 +20,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.25.1"
+
+      - name: Install goose
+        run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
       - name: Set up Node.js for Tailwind
         uses: actions/setup-node@v4
@@ -40,6 +46,9 @@ jobs:
 
       - name: Build and push Docker image
         run: gcloud builds submit --tag us-central1-docker.pkg.dev/my-journal-475314/my-journal-ar-repo/101909/my-journal:latest
+      
+      - name: Run database migrations
+        run: ./scripts/migrateup.sh
 
       - name: Deploy to Cloud Run
         run: gcloud run deploy my-journal --image us-central1-docker.pkg.dev/my-journal-475314/my-journal-ar-repo/101909/my-journal:latest --region us-central1 --allow-unauthenticated --project my-journal-475314 --max-instances=4
